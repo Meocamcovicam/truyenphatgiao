@@ -325,7 +325,7 @@
     <div id="loading-book-overlay">
       <div class="progress-box">
         <div class="progress-header">
-          <span id="book-prog-text">Đang kết nối tải trang...</span>
+          <span id="book-prog-text">Đang kết nối tải sách...</span>
           <span id="book-prog-pct" style="color: var(--accent);">0%</span>
         </div>
         <div class="progress-track">
@@ -345,10 +345,6 @@
 
   <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOwmO8RSpnp9xgWBCBvBkPyVDmtjtuon9nWWNibD_E8FalOFEf7zRQPeeVVTtrM03D-g/exec";
-    
-    // (TÙY CHỌN) Nếu bạn có Google Cloud API Key, điền vào đây để tải trực tiếp từ CDN Google với tốc độ tối đa:
-    const GOOGLE_API_KEY = ""; 
-
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
     let pageFlipInstance = null;
@@ -356,7 +352,12 @@
     let currentPdfDoc = null;
     let renderedPageSet = new Set();
     let renderingPageSet = new Set();
+    let bookLoadInterval = null;
     let isFlipping = false;
+
+    // Hàng đợi tải thumbnail dự phòng bằng PDF.js
+    const thumbQueue = [];
+    let isProcessingThumbQueue = false;
 
     function setShelfProgress(pct, text) {
       document.getElementById("shelf-prog-bar").style.width = pct + "%";
@@ -385,6 +386,7 @@
       }
     }
 
+    // Xử lý khi ảnh thumbnail từ Drive gặp sự cố tải
     function handleThumbError(img, fileId) {
       if (!img.dataset.triedLh3) {
         img.dataset.triedLh3 = "true";
@@ -394,9 +396,60 @@
       img.style.display = "none";
       const ph = document.getElementById("placeholder-" + fileId);
       if (ph) ph.style.display = "flex";
+      queueThumbnailExtraction(fileId);
     }
 
-    // 1. Tải danh mục sách từ Drive
+    // Đưa vào hàng đợi trích xuất trang 1 trong nền
+    function queueThumbnailExtraction(fileId) {
+      if (thumbQueue.includes(fileId)) return;
+      thumbQueue.push(fileId);
+      processThumbQueue();
+    }
+
+    async function processThumbQueue() {
+      if (isProcessingThumbQueue || thumbQueue.length === 0) return;
+      isProcessingThumbQueue = true;
+      const fileId = thumbQueue.shift();
+
+      try {
+        const res = await fetch(`${GOOGLE_SCRIPT_URL}?id=${fileId}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          const raw = atob(data.data);
+          const uint8 = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; i++) uint8[i] = raw.charCodeAt(i);
+
+          const pdf = await pdfjsLib.getDocument({ data: uint8 }).promise;
+          const page1 = await pdf.getPage(1);
+          const vp = page1.getViewport({ scale: 0.6 });
+
+          const cvs = document.createElement("canvas");
+          cvs.width = vp.width;
+          cvs.height = vp.height;
+          await page1.render({ canvasContext: cvs.getContext("2d"), viewport: vp }).promise;
+
+          const dataUrl = cvs.toDataURL("image/jpeg", 0.85);
+          try { localStorage.setItem("thumb_" + fileId, dataUrl); } catch(e) {}
+
+          const img = document.getElementById("thumb-img-" + fileId);
+          const ph = document.getElementById("placeholder-" + fileId);
+          if (img) {
+            img.src = dataUrl;
+            img.style.display = "block";
+          }
+          if (ph) ph.style.display = "none";
+        }
+      } catch (e) {
+        console.warn("Không thể tạo thumbnail nền cho file", fileId);
+      } finally {
+        isProcessingThumbQueue = false;
+        if (thumbQueue.length > 0) {
+          setTimeout(processThumbQueue, 400);
+        }
+      }
+    }
+
+    // 1. Tải danh mục sách từ Drive & Gắn Thumbnail Trang 1
     async function fetchBookList() {
       setShelfProgress(20, "Đang kết nối Google Drive...");
       let cur = 20;
@@ -405,7 +458,7 @@
           cur += 15;
           setShelfProgress(cur, "Đang quét danh sách file PDF...");
         }
-      }, 150);
+      }, 200);
 
       try {
         const response = await fetch(GOOGLE_SCRIPT_URL);
@@ -417,7 +470,7 @@
         setShelfProgress(100, "Đồng bộ thành công!");
         setTimeout(() => {
           document.getElementById("loading-shelf").style.display = "none";
-        }, 250);
+        }, 300);
 
         const files = res.files || [];
         document.getElementById("file-counter").innerText = `Tổng cộng: ${files.length} cuốn`;
@@ -430,6 +483,7 @@
           const card = document.createElement("div");
           card.className = "book-card";
 
+          // Kiểm tra xem đã lưu thumbnail trang 1 trong localStorage chưa
           const cachedThumb = localStorage.getItem("thumb_" + file.id);
           const thumbSrc = cachedThumb || `https://drive.google.com/thumbnail?id=${file.id}&sz=w500`;
 
@@ -456,7 +510,7 @@
       }
     }
 
-    // 2. Render từng trang sách độc lập (Tải lười theo yêu cầu)
+    // 2. Render từng trang sách khi cần xem tới (Lazy Load)
     async function renderSinglePage(pdf, pageNum, containerDiv, targetPageH, sessionId) {
       if (sessionId !== currentSessionId || renderedPageSet.has(pageNum) || renderingPageSet.has(pageNum)) return;
       renderingPageSet.add(pageNum);
@@ -490,7 +544,7 @@
       }
     }
 
-    // 3. Mở sách qua luồng HTTP Range Streaming (Tải trang nào nạp trang đó)
+    // 3. Mở sách & Cấu hình Flipbook
     async function openBook(fileId, fileName) {
       const sessionId = ++currentSessionId;
       renderedPageSet.clear();
@@ -511,42 +565,50 @@
         pageFlipInstance = null;
       }
 
-      setBookProgress(25, "Đang kết nối luồng đọc từng trang...");
+      clearInterval(bookLoadInterval);
+      let loadPercent = 5;
+      setBookProgress(5, "Đang kết nối Google Drive...");
+      bookLoadInterval = setInterval(() => {
+        if (loadPercent < 30) {
+          loadPercent += 4;
+          setBookProgress(loadPercent, "Đang kết nối Google Drive...");
+        } else if (loadPercent < 60) {
+          loadPercent += 3;
+          setBookProgress(loadPercent, "Đang đọc tệp sách từ Drive...");
+        } else if (loadPercent < 85) {
+          loadPercent += 1;
+          setBookProgress(loadPercent, "Đang nạp dữ liệu cuốn sách...");
+        }
+      }, 180);
 
       try {
-        // Tạo đường dẫn phát luồng trực tiếp từ Google Drive
-        let pdfTargetUrl = "";
-        if (GOOGLE_API_KEY && GOOGLE_API_KEY.trim() !== "") {
-          pdfTargetUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${GOOGLE_API_KEY.trim()}`;
-        } else {
-          const directDriveUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
-          // Sử dụng proxy hỗ trợ HTTP Range để phân đoạn từng trang
-          pdfTargetUrl = `https://corsproxy.io/?url=${encodeURIComponent(directDriveUrl)}`;
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?id=${fileId}`);
+        if (!response.ok) throw new Error("HTTP " + response.status);
+
+        const data = await response.json();
+        clearInterval(bookLoadInterval);
+
+        if (sessionId !== currentSessionId) return;
+        if (!data.success) throw new Error(data.error);
+
+        setBookProgress(88, "Đang giải mã PDF...");
+
+        const rawData = atob(data.data);
+        const uint8Array = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; i++) {
+          uint8Array[i] = rawData.charCodeAt(i);
         }
 
-        setBookProgress(50, "Đang đọc mục lục và số trang...");
-
-        // CẤU HÌNH QUAN TRỌNG: disableAutoFetch ngăn chặn tải toàn bộ file một lúc
-        const loadingTask = pdfjsLib.getDocument({
-          url: pdfTargetUrl,
-          rangeChunkSize: 65536, // Phân đoạn 64KB
-          disableAutoFetch: true, // Chỉ kéo byte của trang đang mở
-          disableStream: false
-        });
-
+        const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
         currentPdfDoc = await loadingTask.promise;
-        if (sessionId !== currentSessionId) return;
-
         const total = currentPdfDoc.numPages;
         document.getElementById("total-pages").innerText = total;
-
-        setBookProgress(75, "Đang tính toán kích thước trang...");
 
         const firstPage = await currentPdfDoc.getPage(1);
         const defaultVp = firstPage.getViewport({ scale: 1 });
         const pageRatio = defaultVp.width / defaultVp.height;
 
-        // Lưu ảnh bìa chất lượng cao vào bộ nhớ đệm
+        // Lưu/cập nhật ảnh bìa chất lượng cao vào cache nếu chưa có
         if (!localStorage.getItem("thumb_" + fileId)) {
           setTimeout(async () => {
             try {
@@ -558,9 +620,14 @@
               const dataUrl = cvs.toDataURL("image/jpeg", 0.85);
               localStorage.setItem("thumb_" + fileId, dataUrl);
               const img = document.getElementById("thumb-img-" + fileId);
-              if (img) { img.src = dataUrl; img.style.display = "block"; }
+              if (img) {
+                img.src = dataUrl;
+                img.style.display = "block";
+              }
+              const ph = document.getElementById("placeholder-" + fileId);
+              if (ph) ph.style.display = "none";
             } catch(e) {}
-          }, 300);
+          }, 400);
         }
 
         const isMobile = (window.innerWidth < 768) || (window.innerWidth < window.innerHeight);
@@ -615,7 +682,7 @@
           pageDivs.push(pDiv);
         }
 
-        setBookProgress(90, "Đang dựng trang mở đầu...");
+        setBookProgress(95, "Đang dựng trang sách...");
         await renderSinglePage(currentPdfDoc, 1, pageDivs[0], singlePageH, sessionId);
         if (!isMobile && total >= 2) {
           await renderSinglePage(currentPdfDoc, 2, pageDivs[1], singlePageH, sessionId);
@@ -649,7 +716,6 @@
           }
         });
 
-        // Chỉ nạp dữ liệu khi người đọc lật tới trang đó
         pageFlipInstance.on("flip", (e) => {
           const curIndex = e.data;
           updatePageIndicator(curIndex, total, isMobile);
@@ -671,9 +737,10 @@
           if (sessionId === currentSessionId) {
             overlay.style.display = "none";
           }
-        }, 150);
+        }, 200);
 
       } catch (err) {
+        clearInterval(bookLoadInterval);
         if (sessionId === currentSessionId) {
           alert("Lỗi tải sách: " + err.message);
           backToShelf();
@@ -714,7 +781,7 @@
       }
     });
 
-    // Cử chỉ cảm ứng Mobile
+    // Xử lý cử chỉ cảm ứng trên điện thoại
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
@@ -783,6 +850,7 @@
 
     function backToShelf() {
       currentSessionId++;
+      clearInterval(bookLoadInterval);
       isFlipping = false;
       document.getElementById("reader-view").style.display = "none";
       document.getElementById("shelf-view").style.display = "block";
