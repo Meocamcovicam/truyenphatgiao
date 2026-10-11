@@ -44,12 +44,10 @@
   <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 
   <style>
-    /* Nền phòng đọc sách cổ điển */
     .library-bg {
       background: radial-gradient(circle at 50% 10%, #1a1e27 0%, #101217 60%, #090a0d 100%);
     }
 
-    /* Kệ sách gỗ 3D */
     .shelf-container {
       perspective: 1100px;
     }
@@ -77,7 +75,6 @@
       filter: blur(6px);
     }
 
-    /* Thẻ sách 3D */
     .book-card {
       transform-style: preserve-3d;
       transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
@@ -97,7 +94,6 @@
       box-shadow: inset 6px 0 10px rgba(0,0,0,0.45), inset -2px 0 4px rgba(255,255,255,0.15);
     }
 
-    /* Flipbook Reader Stage - Đảm bảo sách luôn căn giữa và fit chiều dọc */
     #reader-stage {
       display: flex;
       align-items: center;
@@ -123,7 +119,6 @@
       user-select: none;
     }
 
-    /* Trang sách */
     .page {
       background-color: #ffffff;
       overflow: hidden;
@@ -143,7 +138,6 @@
       color: #fff;
     }
 
-    /* Skeleton tải trang */
     .page-skeleton {
       display: flex;
       flex-direction: column;
@@ -163,7 +157,6 @@
        =============================================================== -->
   <div id="bookshelf-view" class="min-h-full flex flex-col library-bg">
     
-    <!-- Top Header -->
     <header class="border-b border-amber-900/30 bg-slate-950/80 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-40">
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 flex items-center justify-center text-slate-950 text-xl shadow-lg shadow-amber-500/20">
@@ -172,36 +165,19 @@
         <div>
           <h1 class="text-base sm:text-xl font-bold font-serif text-amber-100 flex items-center gap-2">
             TỦ SÁCH PHẬT GIÁO
-            <span id="shelf-badge" class="text-[11px] font-sans font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <span class="text-[11px] font-sans font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
               16 Cuốn Sách
             </span>
           </h1>
         </div>
       </div>
-
-      <!-- Nút Đồng Bộ Thư Mục PDF (Giải quyết triệt để lỗi chặn file:// của Cốc Cốc / Chrome) -->
-      <div class="flex items-center gap-2">
-        <button id="btn-sync-folder" class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all active:scale-95 shadow">
-          <i class="fa-solid fa-folder-open text-amber-400"></i>
-          <span id="sync-btn-label">Đồng bộ thư mục PDF</span>
-        </button>
-        <!-- Input ẩn để duyệt cả thư mục pdf -->
-        <input type="file" id="folder-picker" webkitdirectory directory multiple class="hidden">
-        <input type="file" id="file-picker" accept=".pdf" class="hidden">
-      </div>
     </header>
 
-    <!-- Khu vực chính: Các tầng kệ gỗ 3D -->
     <main class="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-8 sm:py-12">
       <div class="h-1.5 w-3/4 max-w-2xl mx-auto rounded-full bg-amber-400/20 blur-xl mb-8"></div>
-
-      <!-- Vùng chứa các tầng kệ sách -->
-      <div id="bookshelf-shelves" class="space-y-12 sm:space-y-16">
-        <!-- Render bằng Javascript -->
-      </div>
+      <div id="bookshelf-shelves" class="space-y-12 sm:space-y-16"></div>
     </main>
 
-    <!-- Footer -->
     <footer class="border-t border-slate-900 bg-slate-950/80 px-4 py-3 text-center text-xs text-amber-300/60 font-serif">
       Nhấp vào từng cuốn sách để mở trình đọc lật trang 3D
     </footer>
@@ -212,21 +188,19 @@
        =============================================================== -->
   <div id="reader-view" class="fixed inset-0 z-50 bg-[#0d0f14] hidden flex-col select-none overflow-hidden" style="height: 100vh; height: 100dvh;">
     
-    <!-- Thanh điều hướng trên cùng (52px) -->
     <nav class="h-[52px] bg-slate-900/95 border-b border-slate-800 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20">
       <button id="btn-back-shelf" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium flex items-center gap-2 border border-slate-700 transition-all active:scale-95 shadow">
         <i class="fa-solid fa-arrow-left text-amber-400"></i>
         <span>Về kệ sách</span>
       </button>
 
-      <!-- Tiêu đề sách -->
       <div class="text-center px-2 truncate max-w-[50vw]">
         <h2 id="reader-title" class="text-xs sm:text-sm md:text-base font-semibold font-serif text-amber-200 truncate">Tên Sách</h2>
-        <span id="reader-file-badge" class="text-[10px] text-amber-400/70">Flipbook 3D Fit</span>
+        <span class="text-[10px] text-amber-400/70">Flipbook 3D Fit</span>
       </div>
 
       <div class="flex items-center gap-2">
-        <button id="btn-sound" title="Bật/Tắt âm thanh lật sách" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-colors">
+        <button id="btn-sound" title="Bật/Tắt âm thanh" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center transition-colors">
           <i class="fa-solid fa-volume-high" id="sound-icon"></i>
         </button>
         <button id="btn-fullscreen" title="Toàn màn hình" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors">
@@ -235,22 +209,17 @@
       </div>
     </nav>
 
-    <!-- SÂN KHẤU CHÍNH (flex-1 min-h-0: chiếm trọn chiều cao còn lại, không bao giờ tụt xuống) -->
+    <!-- Khu vực đọc sách khít dọc màn hình -->
     <div id="reader-stage" class="relative flex-1 w-full min-h-0 overflow-hidden flex items-center justify-center bg-[#111318]">
       
-      <!-- Nút trang trước (Trái) -->
       <button id="btn-prev-page" class="absolute left-2 sm:left-4 z-30 w-10 h-10 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-amber-600 text-white flex items-center justify-center shadow-2xl backdrop-blur-sm border border-slate-700/60 transition-all active:scale-95 disabled:opacity-20 disabled:pointer-events-none">
         <i class="fa-solid fa-chevron-left text-sm sm:text-lg"></i>
       </button>
 
-      <!-- Khung chứa sách Fit chiều dọc -->
       <div id="book-stage-inner">
-        <div id="flipbook-container">
-          <!-- Canvas các trang sẽ được render ở đây -->
-        </div>
+        <div id="flipbook-container"></div>
       </div>
 
-      <!-- Nút trang sau (Phải) -->
       <button id="btn-next-page" class="absolute right-2 sm:right-4 z-30 w-10 h-10 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-amber-600 text-white flex items-center justify-center shadow-2xl backdrop-blur-sm border border-slate-700/60 transition-all active:scale-95 disabled:opacity-20 disabled:pointer-events-none">
         <i class="fa-solid fa-chevron-right text-sm sm:text-lg"></i>
       </button>
@@ -261,14 +230,14 @@
           <div class="w-14 h-14 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin"></div>
           <i class="fa-solid fa-book-open text-amber-400 absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-sm"></i>
         </div>
-        <p id="loader-text" class="text-sm font-medium text-amber-100">Đang khởi tạo trang PDF...</p>
+        <p id="loader-text" class="text-sm font-medium text-amber-100">Đang nạp file PDF...</p>
         <div class="w-56 bg-slate-800 rounded-full h-1.5 overflow-hidden">
           <div id="loader-progress" class="bg-amber-500 h-1.5 w-0 transition-all duration-200"></div>
         </div>
       </div>
     </div>
 
-    <!-- Thanh điều khiển trang phía dưới (48px) -->
+    <!-- Thanh chuyển trang phía dưới -->
     <div class="h-[48px] bg-slate-900/95 border-t border-slate-800 px-4 flex items-center justify-between gap-3 shrink-0 z-20">
       <div class="flex items-center gap-1.5">
         <button id="btn-first" title="Trang đầu" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center justify-center">
@@ -292,32 +261,6 @@
     </div>
   </div>
 
-  <!-- POPUP HỖ TRỢ KẾT NỐI LOCAL KHI BỊ CHẶN BỞI FILE:// -->
-  <div id="sync-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl space-y-4">
-      <div class="w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 text-2xl flex items-center justify-center mx-auto">
-        <i class="fa-solid fa-folder-open"></i>
-      </div>
-      <h3 class="text-lg font-serif font-bold text-amber-100" id="modal-book-title">Kết nối thư mục PDF</h3>
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed text-left bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
-        Trình duyệt (Cốc Cốc/Chrome) bảo vệ an toàn bằng cách chặn đọc file tự động từ giao thức <code class="text-amber-300">file:///</code>.<br><br>
-        👉 Hãy nhấn nút bên dưới và chọn thư mục <strong class="text-amber-200">"pdf"</strong> nằm cùng thư mục với file này (chỉ cần làm 1 lần) để đọc toàn bộ sách thật ngay lập tức!
-      </p>
-      <div class="flex flex-col gap-2 pt-2">
-        <button id="modal-btn-folder" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-500/20">
-          <i class="fa-solid fa-folder-open"></i>
-          <span>Chọn thư mục "pdf"</span>
-        </button>
-        <button id="modal-btn-single" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700">
-          Hoặc chọn riêng file PDF cuốn sách này
-        </button>
-        <button id="modal-btn-close" class="text-xs text-slate-500 hover:text-slate-300 pt-1">
-          Đóng lại
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- Toast -->
   <div id="toast" class="fixed top-5 right-5 z-50 transform -translate-y-28 transition-transform duration-300 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-amber-500/40 text-slate-200 shadow-2xl text-xs sm:text-sm pointer-events-none">
     <i id="toast-icon" class="fa-solid fa-circle-info text-amber-400"></i>
@@ -326,7 +269,7 @@
 
   <script>
     /* =========================================================================
-     * 1. DANH SÁCH 16 FILE PDF CHÍNH XÁC TỪ THƯ MỤC 'pdf/'
+     * 1. DANH SÁCH 16 CUỐN SÁCH (Tương thích Online GitHub Pages)
      * ========================================================================= */
     const PDF_LIBRARY = [
       {
@@ -443,15 +386,6 @@
       }
     ];
 
-    // Bảng lưu trữ File Object khi người dùng chọn thư mục
-    const LOCAL_FILES_STORE = new Map();
-    let pendingBookToOpen = null;
-
-    // Chuẩn hóa tên file để so sánh chính xác dù khác Unicode NFC/NFD
-    function normalizeStr(str) {
-      return (str || '').normalize('NFC').trim().toLowerCase().replace(/\s+/g, ' ');
-    }
-
     /* =========================================================================
      * 2. BỘ PHÁT ÂM THANH LẬT SÁCH (Web Audio API)
      * ========================================================================= */
@@ -472,9 +406,7 @@
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const output = buffer.getChannelData(0);
 
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 2 - 1;
-        }
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
 
         const whiteNoise = audioCtx.createBufferSource();
         whiteNoise.buffer = buffer;
@@ -522,12 +454,8 @@
           const thumbPathPng = `thumbnails/${rawName}.png`;
 
           booksHtml += `
-            <div class="book-card group cursor-pointer flex flex-col items-center select-none w-full max-w-[176px]" onclick="onSelectBook('${book.id}')">
-              
-              <!-- Bìa sách 3D -->
+            <div class="book-card group cursor-pointer flex flex-col items-center select-none w-full max-w-[176px]" onclick="openBookById('${book.id}')">
               <div class="relative w-32 sm:w-40 md:w-44 h-48 sm:h-60 md:h-64 rounded-r-lg rounded-l-sm overflow-hidden shadow-2xl book-spine-line bg-slate-900 border-r border-amber-500/20">
-                
-                <!-- Bìa Hoa Sen Vàng Thuần HTML/CSS/SVG (Không bao giờ vỡ ảnh) -->
                 <div class="absolute inset-0 flex flex-col justify-between p-3.5 sm:p-4 text-center select-none" style="background: ${book.gradient};">
                   <div class="absolute inset-2 border border-amber-400/40 rounded pointer-events-none"></div>
                   <div class="absolute inset-3 border border-amber-300/20 rounded pointer-events-none"></div>
@@ -548,12 +476,11 @@
 
                   <div class="z-10 pb-1">
                     <span class="inline-block px-2 py-0.5 rounded-full text-[9px] bg-amber-500/20 text-amber-200 border border-amber-400/30 uppercase font-semibold">
-                      PDF SÁCH THẬT
+                      PDF SÁCH
                     </span>
                   </div>
                 </div>
 
-                <!-- Ảnh Thumbnail (nếu có trong thư mục thumbnails/) -->
                 <img src="${encodeURI(thumbPathJpg)}" 
                      alt="${book.title}" 
                      class="absolute inset-0 w-full h-full object-cover hidden z-10"
@@ -563,13 +490,12 @@
 
                 <div class="absolute inset-0 bg-gradient-to-r from-black/45 via-transparent to-white/10 pointer-events-none z-20"></div>
 
-                <!-- Hover button -->
                 <div class="absolute inset-0 bg-slate-950/80 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center p-2 text-center z-30">
                   <span class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-lg shadow-lg mb-1.5 transform group-hover:scale-110 transition-transform">
                     <i class="fa-solid fa-book-open"></i>
                   </span>
-                  <span class="text-xs font-bold text-white tracking-wide">Mở Đọc Ngay</span>
-                  <span class="text-[10px] text-amber-300">Khớp khít chiều dọc</span>
+                  <span class="text-xs font-bold text-white tracking-wide">Mở Đọc Sách</span>
+                  <span class="text-[10px] text-amber-300">Lật trang 3D</span>
                 </div>
               </div>
 
@@ -601,91 +527,15 @@
       }
     }
 
-    /* =========================================================================
-     * 4. BỘ ĐỒNG BỘ THƯ MỤC PDF TỪ MÁY (Xử lý dứt điểm rào cản file:// CORS)
-     * ========================================================================= */
-    function indexLocalPdfFiles(files) {
-      let pdfCount = 0;
-      for (const file of files) {
-        if (file.name.toLowerCase().endsWith('.pdf')) {
-          LOCAL_FILES_STORE.set(normalizeStr(file.name), file);
-          pdfCount++;
-        }
-      }
-
-      if (pdfCount > 0) {
-        showToast(`Đã đồng bộ ${pdfCount} file PDF từ máy thành công!`);
-        document.getElementById('sync-btn-label').innerText = `Đã đồng bộ (${pdfCount} PDF)`;
-        document.getElementById('btn-sync-folder').className = 'px-3.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs sm:text-sm font-semibold flex items-center gap-2 shadow';
-        
-        // Nếu đang chờ mở cuốn nào đó thì mở ngay
-        if (pendingBookToOpen) {
-          const book = pendingBookToOpen;
-          pendingBookToOpen = null;
-          closeSyncModal();
-          startReadingBook(book);
-        }
-      } else {
-        showToast('Không tìm thấy file .pdf nào trong thư mục đã chọn!');
-      }
-    }
-
-    function openSyncModal(book) {
-      pendingBookToOpen = book;
-      document.getElementById('modal-book-title').innerText = book.title;
-      document.getElementById('sync-modal').classList.remove('hidden');
-    }
-
-    function closeSyncModal() {
-      document.getElementById('sync-modal').classList.add('hidden');
-    }
-
-    function onSelectBook(bookId) {
-      const book = PDF_LIBRARY.find(b => b.id === bookId);
-      if (!book) return;
-
-      // 1. Kiểm tra xem đã có trong bộ nhớ cục bộ chưa
-      const localFile = getMatchedLocalFile(book.fileName);
-      if (localFile) {
-        startReadingBook(book, localFile);
-        return;
-      }
-
-      // 2. Thử fetch trực tiếp xem có chạy trên local server không
-      fetch('pdf/' + encodeURIComponent(book.fileName), { method: 'HEAD' })
-        .then(res => {
-          if (res.ok) {
-            startReadingBook(book, null);
-          } else {
-            openSyncModal(book);
-          }
-        })
-        .catch(() => {
-          // Bị CORS của file:// chặn -> hiện popup kết nối thư mục 1 lần
-          openSyncModal(book);
-        });
-    }
-
-    function getMatchedLocalFile(targetName) {
-      const normalizedTarget = normalizeStr(targetName);
-      if (LOCAL_FILES_STORE.has(normalizedTarget)) {
-        return LOCAL_FILES_STORE.get(normalizedTarget);
-      }
-
-      // Thử tìm theo từ khóa chính (trường hợp tên file hơi lệch dấu)
-      for (const [name, file] of LOCAL_FILES_STORE.entries()) {
-        const baseTarget = normalizedTarget.split('_')[0];
-        if (name.includes(baseTarget)) {
-          return file;
-        }
-      }
-      return null;
+    function openBookById(id) {
+      const book = PDF_LIBRARY.find(b => b.id === id);
+      if (book) startReadingOnlineBook(book);
     }
 
     /* =========================================================================
-     * 5. TÍNH TOÁN KÍCH THƯỚC SÁCH: VERTICAL FIT 100% (KHÔNG BAO GIỜ BỊ TỤT XUỐNG)
+     * 4. TÍNH TOÁN KÍCH THƯỚC SÁCH FIT DỌC MÀN HÌNH (VERTICAL FIT)
      * ========================================================================= */
-    let currentBookAspectRatio = 0.707; // Tỉ lệ trang mặc định (A4 / Truyện tranh)
+    let currentBookAspectRatio = 0.707;
 
     function calculateOptimalBookDimensions() {
       const stage = document.getElementById('reader-stage');
@@ -693,32 +543,25 @@
       const stageH = stage.clientHeight || (window.innerHeight - 100);
       const isMobile = stageW < 768;
 
-      // Chừa lề nhỏ 24px để sách thở, vừa khít trọn vẹn theo chiều dọc
       const maxAvailableH = Math.max(260, stageH - 24);
       let pageAspect = currentBookAspectRatio;
 
       let singleW, bookH;
 
       if (isMobile) {
-        // Chế độ 1 trang trên điện thoại
         const maxAvailableW = Math.max(220, stageW - 20);
-        
         bookH = maxAvailableH;
         singleW = Math.round(bookH * pageAspect);
 
-        // Nếu chiều rộng tràn thì co lại theo chiều rộng
         if (singleW > maxAvailableW) {
           singleW = maxAvailableW;
           bookH = Math.round(singleW / pageAspect);
         }
       } else {
-        // Chế độ 2 trang mở rộng trên PC/iPad (chừa khoảng trống cho nút mũi tên 2 bên)
         const maxAvailableW = Math.max(380, stageW - 130);
-
         bookH = maxAvailableH;
         singleW = Math.round(bookH * pageAspect);
 
-        // Chiều rộng 2 trang mở ra (Spread)
         const spreadW = singleW * 2;
         if (spreadW > maxAvailableW) {
           singleW = Math.round(maxAvailableW / 2);
@@ -734,7 +577,7 @@
     }
 
     /* =========================================================================
-     * 6. TRÌNH ĐỌC PDF THẬT BẰNG FLIPBOOK ENGINE & RENDER TIỆN ÍCH
+     * 5. TRÌNH ĐỌC PDF THẬT BẰNG FLIPBOOK ENGINE TRÊN GITHUB PAGES
      * ========================================================================= */
     let flipPageInstance = null;
     let activePdfDoc = null;
@@ -772,44 +615,48 @@
       if (barEl) barEl.style.width = percent + '%';
     }
 
-    async function startReadingBook(book, localFile) {
+    async function startReadingOnlineBook(book) {
       document.getElementById('reader-title').innerText = book.title;
 
-      // 1. Chuyển sang màn hình đọc
+      // 1. Chuyển sang màn hình đọc sách
       document.getElementById('bookshelf-view').classList.add('hidden');
       const readerView = document.getElementById('reader-view');
       readerView.classList.remove('hidden');
       readerView.classList.add('flex');
 
-      showLoaderOverlay('Đang nạp file PDF gốc...');
-      void readerView.offsetHeight; // Kích hoạt reflow lấy đúng tọa độ
+      showLoaderOverlay('Đang tải file PDF từ máy chủ...');
+      void readerView.offsetHeight;
 
       try {
-        let pdfData;
-        if (localFile) {
-          updateLoaderProgress('Đang đọc dữ liệu từ máy...', 30);
-          pdfData = { data: await localFile.arrayBuffer() };
-        } else {
-          updateLoaderProgress('Đang tải file từ thư mục pdf/...', 30);
-          pdfData = { url: encodeURI('pdf/' + book.fileName) };
-        }
+        // Đường dẫn file online trên GitHub Pages
+        const onlinePdfPath = './pdf/' + encodeURIComponent(book.fileName);
 
-        // Khởi tạo PDF.js
-        const loadingTask = pdfjsLib.getDocument(pdfData);
+        const loadingTask = pdfjsLib.getDocument({
+          url: onlinePdfPath,
+          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+          cMapPacked: true
+        });
+
+        // Cập nhật tiến độ tải
+        loadingTask.onProgress = function(progressData) {
+          if (progressData.total > 0) {
+            const percent = Math.min(85, Math.floor((progressData.loaded / progressData.total) * 70) + 15);
+            updateLoaderProgress(`Đang tải PDF (${Math.round(progressData.loaded / (1024 * 1024))}MB)...`, percent);
+          }
+        };
+
         activePdfDoc = await loadingTask.promise;
         currentBookPagesCount = activePdfDoc.numPages;
 
-        updateLoaderProgress(`Đã đọc ${currentBookPagesCount} trang PDF. Đang dựng khung 3D...`, 60);
+        updateLoaderProgress(`Đã đọc ${currentBookPagesCount} trang. Đang dựng khung 3D...`, 85);
 
-        // Lấy tỉ lệ trang thực tế từ trang đầu tiên
+        // Lấy tỉ lệ trang thực tế
         const firstPage = await activePdfDoc.getPage(1);
         const unscaledViewport = firstPage.getViewport({ scale: 1.0 });
         currentBookAspectRatio = unscaledViewport.width / unscaledViewport.height;
 
-        // Tính toán kích thước tối ưu fit chiều dọc
         const dims = calculateOptimalBookDimensions();
 
-        // Tạo khung chứa trang sách
         const container = document.getElementById('flipbook-container');
         container.innerHTML = '';
         renderedPagesMap.clear();
@@ -822,7 +669,6 @@
             pageDiv.setAttribute('data-density', 'hard');
           }
 
-          // Khung chờ khi chưa render
           pageDiv.innerHTML = `
             <div class="page-skeleton">
               <div class="w-7 h-7 rounded-full border-2 border-amber-600/30 border-t-amber-600 animate-spin mb-2"></div>
@@ -832,14 +678,13 @@
           container.appendChild(pageDiv);
         }
 
-        // Render sẵn 3 trang đầu tiên trước khi mở để mở tức thì không giật
+        // Render sẵn 3 trang đầu tiên
         await renderSinglePdfPage(1, dims.height);
         if (currentBookPagesCount >= 2) await renderSinglePdfPage(2, dims.height);
         if (currentBookPagesCount >= 3) await renderSinglePdfPage(3, dims.height);
 
         updateLoaderProgress('Sẵn sàng lật sách!', 100);
 
-        // Khởi tạo StPageFlip với kích cỡ 'fixed' tính toán chính xác
         if (flipPageInstance) {
           try { flipPageInstance.destroy(); } catch (e) {}
           flipPageInstance = null;
@@ -848,7 +693,7 @@
         flipPageInstance = new St.PageFlip(container, {
           width: dims.width,
           height: dims.height,
-          size: 'fixed', // KHẮC PHỤC TRIỆT ĐỂ LỖI BỊ TỤT XUỐNG DƯỚI DO 'stretch'
+          size: 'fixed',
           minWidth: 180,
           maxWidth: 1200,
           minHeight: 260,
@@ -863,12 +708,10 @@
 
         flipPageInstance.loadFromHTML(document.querySelectorAll('#flipbook-container .page'));
 
-        // Lắng nghe sự kiện lật trang để phát âm thanh & render gối đầu trang tiếp theo
         flipPageInstance.on('flip', (e) => {
           playPaperFlipSound();
           const pageIndex = e.data;
           updatePageControls(pageIndex);
-          // Render trước các trang kế tiếp trong nền
           preloadAdjacentPages(pageIndex + 1, dims.height);
         });
 
@@ -876,13 +719,12 @@
         setTimeout(dismissLoaderOverlay, 250);
 
       } catch (err) {
-        console.error('Lỗi khi mở PDF:', err);
+        console.error('Lỗi khi tải file PDF từ GitHub:', err);
         dismissLoaderOverlay();
-        openSyncModal(book);
+        showToast('Chưa tìm thấy file PDF trong thư mục ./pdf/ trên GitHub!');
       }
     }
 
-    // Render 1 trang PDF lên thẻ Canvas
     async function renderSinglePdfPage(pageNumber, renderHeight) {
       if (renderedPagesMap.has(pageNumber) || !activePdfDoc) return;
       if (pageNumber < 1 || pageNumber > currentBookPagesCount) return;
@@ -891,7 +733,6 @@
         const page = await activePdfDoc.getPage(pageNumber);
         const unscaledViewport = page.getViewport({ scale: 1.0 });
 
-        // Tối ưu độ nét theo màn hình nhưng không gây quá tải RAM
         const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         const scale = (renderHeight / unscaledViewport.height) * dpr;
         const viewport = page.getViewport({ scale: scale });
@@ -919,7 +760,6 @@
     }
 
     function preloadAdjacentPages(currentPage, renderHeight) {
-      // Render trước 3 trang tới và 1 trang lui
       for (let offset = -1; offset <= 3; offset++) {
         const target = currentPage + offset;
         if (target >= 1 && target <= currentBookPagesCount && !renderedPagesMap.has(target)) {
@@ -964,43 +804,15 @@
       setTimeout(() => {
         toast.classList.remove('translate-y-0');
         toast.classList.add('-translate-y-28');
-      }, 3200);
+      }, 3500);
     }
 
     /* =========================================================================
-     * 7. SỰ KIỆN GIAO DIỆN & BÀN PHÍM
+     * 6. SỰ KIỆN GIAO DIỆN & BÀN PHÍM
      * ========================================================================= */
     document.addEventListener('DOMContentLoaded', () => {
       renderMultiTierBookshelf();
 
-      // Nút đồng bộ thư mục
-      const folderPicker = document.getElementById('folder-picker');
-      const filePicker = document.getElementById('file-picker');
-
-      document.getElementById('btn-sync-folder').addEventListener('click', () => folderPicker.click());
-      document.getElementById('modal-btn-folder').addEventListener('click', () => folderPicker.click());
-      document.getElementById('modal-btn-single').addEventListener('click', () => filePicker.click());
-      document.getElementById('modal-btn-close').addEventListener('click', closeSyncModal);
-
-      folderPicker.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-          indexLocalPdfFiles(e.target.files);
-        }
-      });
-
-      filePicker.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          LOCAL_FILES_STORE.set(normalizeStr(file.name), file);
-          closeSyncModal();
-          if (pendingBookToOpen) {
-            startReadingBook(pendingBookToOpen, file);
-            pendingBookToOpen = null;
-          }
-        }
-      });
-
-      // Điều hướng trong sách
       document.getElementById('btn-back-shelf').addEventListener('click', closeBookReader);
       document.getElementById('btn-prev-page').addEventListener('click', () => flipPageInstance && flipPageInstance.flipPrev());
       document.getElementById('btn-next-page').addEventListener('click', () => flipPageInstance && flipPageInstance.flipNext());
@@ -1014,7 +826,6 @@
         if (flipPageInstance) flipPageInstance.flip(val);
       });
 
-      // Âm thanh
       document.getElementById('btn-sound').addEventListener('click', () => {
         isSoundOn = !isSoundOn;
         const icon = document.getElementById('sound-icon');
@@ -1028,7 +839,6 @@
         }
       });
 
-      // Fullscreen
       document.getElementById('btn-fullscreen').addEventListener('click', () => {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(() => {});
@@ -1037,7 +847,6 @@
         }
       });
 
-      // Phím tắt máy tính
       window.addEventListener('keydown', (e) => {
         if (!flipPageInstance) return;
         if (e.key === 'ArrowRight' || e.key === 'PageDown') flipPageInstance.flipNext();
@@ -1045,7 +854,6 @@
         else if (e.key === 'Escape') closeBookReader();
       });
 
-      // Tự động căn lại trang khi xoay ngang/dọc thiết bị hoặc đổi kích thước cửa sổ
       window.addEventListener('resize', () => {
         if (flipPageInstance && activePdfDoc) {
           const dims = calculateOptimalBookDimensions();
