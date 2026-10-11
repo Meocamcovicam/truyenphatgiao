@@ -214,6 +214,7 @@
       position: absolute;
       inset: 0;
       background: #0b1120;
+      transition: opacity 0.2s;
     }
 
     /* Khung tiến trình */
@@ -347,7 +348,6 @@
   </div>
 
   <script>
-    // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY:
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOwmO8RSpnp9xgWBCBvBkPyVDmtjtuon9nWWNibD_E8FalOFEf7zRQPeeVVTtrM03D-g/exec";
 
     let pageFlipInstance = null;
@@ -356,7 +356,6 @@
     let loadedImageSet = new Set();
     let isFlipping = false;
 
-    // Helper tạo URL ảnh CDN trực tiếp từ Drive
     function getDriveImageUrl(fileId, size = 1600) {
       return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
     }
@@ -421,7 +420,6 @@
         books.forEach(book => {
           const card = document.createElement("div");
           card.className = "book-card";
-
           const thumbSrc = book.thumbId ? getDriveImageUrl(book.thumbId, 600) : "";
 
           card.innerHTML = `
@@ -448,28 +446,50 @@
       }
     }
 
-    // 2. Nạp ảnh từng trang (Lazy-load theo yêu cầu)
+    // 2. Nạp ảnh từng trang (Trả về Promise để chờ ảnh tải xong)
     function loadPageImage(pageIndex, sessionId) {
-      if (sessionId !== currentSessionId || loadedImageSet.has(pageIndex)) return;
-      if (pageIndex < 0 || pageIndex >= currentPages.length) return;
+      if (sessionId !== currentSessionId) return Promise.resolve();
+      if (pageIndex < 0 || pageIndex >= currentPages.length) return Promise.resolve();
+      if (loadedImageSet.has(pageIndex)) return Promise.resolve();
 
       loadedImageSet.add(pageIndex);
       const img = document.getElementById(`page-img-${pageIndex}`);
       const skel = document.getElementById(`page-skel-${pageIndex}`);
 
-      if (img && skel) {
+      if (!img || !skel) return Promise.resolve();
+
+      return new Promise((resolve) => {
         const fileId = currentPages[pageIndex].id;
         img.src = getDriveImageUrl(fileId, 1600);
+        
         img.onload = () => {
           if (sessionId === currentSessionId) {
             skel.style.display = "none";
             img.style.display = "block";
           }
+          resolve();
         };
         img.onerror = () => {
-          // Thử link fallback
           img.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+          img.onload = () => {
+            if (sessionId === currentSessionId) {
+              skel.style.display = "none";
+              img.style.display = "block";
+            }
+            resolve();
+          };
+          img.onerror = () => resolve();
         };
+      });
+    }
+
+    // Tải trước một dải các trang tiếp theo
+    function preloadPageRange(centerIndex, sessionId, isMobile) {
+      const span = isMobile ? 3 : 6; // Trên PC luôn đón đầu trước 6 trang
+      const start = Math.max(0, centerIndex - 2);
+      const end = Math.min(currentPages.length - 1, centerIndex + span);
+      for (let p = start; p <= end; p++) {
+        loadPageImage(p, sessionId);
       }
     }
 
@@ -508,9 +528,9 @@
 
         if (total === 0) throw new Error("Thư mục truyện không có ảnh nào.");
 
-        setBookProgress(60, "Đang đo kích thước trang ảnh...");
+        setBookProgress(50, "Đang đo tỷ lệ trang ảnh...");
 
-        // Nạp trước ảnh 1 để đo tỷ lệ khung hình chính xác
+        // Đo kích thước trang đầu tiên
         const firstImg = new Image();
         firstImg.src = getDriveImageUrl(currentPages[0].id, 1600);
         await new Promise((resolve) => {
@@ -536,7 +556,6 @@
         let singlePageW, singlePageH;
 
         if (isMobile) {
-          // --- MOBILE: 1 TRANG ĐƠN VỪA KHÍT ---
           if (availW / availH > pageRatio) {
             singlePageH = Math.floor(availH);
             singlePageW = Math.floor(singlePageH * pageRatio);
@@ -545,7 +564,6 @@
             singlePageH = Math.floor(singlePageW / pageRatio);
           }
         } else {
-          // --- PC: 2 TRANG ĐÔI MỞ RỘNG ---
           const spreadRatio = 2 * pageRatio;
           let spreadW, spreadH;
           if (availW / availH > spreadRatio) {
@@ -571,7 +589,7 @@
         }
         bookWrapper.appendChild(flipbookContainer);
 
-        // Tạo khung thẻ cho từng trang ảnh
+        // Tạo sẵn thẻ cho tất cả các trang
         const pageDivs = [];
         for (let i = 0; i < total; i++) {
           const pDiv = document.createElement("div");
@@ -584,12 +602,16 @@
           pageDivs.push(pDiv);
         }
 
-        // Tải ngay trang 1 (và trang 2 nếu là PC)
-        setBookProgress(90, "Chuẩn bị mở trang sách...");
-        loadPageImage(0, sessionId);
-        if (!isMobile && total >= 2) {
-          loadPageImage(1, sessionId);
-        }
+        // TẢI ĐÓN ĐẦU NGAY TỪ ĐẦU (Trang bìa và 2 lượt lật tiếp theo: 0, 1, 2, 3, 4)
+        setBookProgress(80, "Đang tải sẵn các trang mở đầu...");
+        const initialLoads = [loadPageImage(0, sessionId)];
+        if (total > 1) initialLoads.push(loadPageImage(1, sessionId));
+        if (total > 2) initialLoads.push(loadPageImage(2, sessionId));
+        if (total > 3) initialLoads.push(loadPageImage(3, sessionId));
+        if (total > 4) initialLoads.push(loadPageImage(4, sessionId));
+        
+        // Đợi ít nhất 3 trang đầu nạp xong vào RAM trước khi mở sách
+        await Promise.all(initialLoads.slice(0, Math.min(3, total)));
 
         if (sessionId !== currentSessionId) return;
         setBookProgress(100, "Sẵn sàng!");
@@ -612,38 +634,38 @@
         pageFlipInstance.loadFromHTML(pageDivs);
         updatePageIndicator(0, total, isMobile);
 
+        // NGAY KHI BẮT ĐẦU CHẠM LẬT: Tải đón đầu ngay các trang tiếp theo
         pageFlipInstance.on("changeState", (e) => {
           if (e.data === "read") {
             isFlipping = false;
-          } else if (e.data === "flipping") {
+          } else if (e.data === "flipping" || e.data === "user_fold") {
             isFlipping = true;
+            const cur = pageFlipInstance.getCurrentPageIndex();
+            preloadPageRange(cur, sessionId, isMobile);
           }
         });
 
-        // Bắt sự kiện lật: Tải trước các trang liền kề
+        // KHI LẬT XONG: Cập nhật số trang và tiếp tục tải đệm các trang sau
         pageFlipInstance.on("flip", (e) => {
           const curIndex = e.data;
           updatePageIndicator(curIndex, total, isMobile);
-
-          // Tải trước 2 trang tiếp theo và 1 trang trước đó
-          const start = Math.max(0, curIndex - 1);
-          const end = Math.min(total - 1, curIndex + (isMobile ? 2 : 4));
-          for (let p = start; p <= end; p++) {
-            loadPageImage(p, sessionId);
-          }
+          preloadPageRange(curIndex, sessionId, isMobile);
         });
-
-        // Tải đệm trang 2 & 3 trong nền
-        setTimeout(() => {
-          loadPageImage(1, sessionId);
-          if (total >= 3) loadPageImage(2, sessionId);
-        }, 300);
 
         setTimeout(() => {
           if (sessionId === currentSessionId) {
             overlay.style.display = "none";
           }
         }, 200);
+
+        // TIẾN TRÌNH NỀN: Tự động tải dần tất cả các trang còn lại vào cache
+        (async () => {
+          for (let p = 5; p < total; p++) {
+            if (sessionId !== currentSessionId) break;
+            await new Promise(r => setTimeout(r, 200));
+            loadPageImage(p, sessionId);
+          }
+        })();
 
       } catch (err) {
         if (sessionId === currentSessionId) {
@@ -658,6 +680,9 @@
       if (document.getElementById("reader-view").style.display === "flex") {
         try {
           isFlipping = true;
+          // Kích hoạt preload trước khi gọi hàm flip
+          const cur = pageFlipInstance.getCurrentPageIndex();
+          preloadPageRange(Math.max(0, cur - 2), currentSessionId, window.innerWidth < 768);
           pageFlipInstance.flipPrev();
           setTimeout(() => { isFlipping = false; }, 450);
         } catch (e) {
@@ -671,6 +696,9 @@
       if (document.getElementById("reader-view").style.display === "flex") {
         try {
           isFlipping = true;
+          // Kích hoạt preload trước khi gọi hàm flip
+          const cur = pageFlipInstance.getCurrentPageIndex();
+          preloadPageRange(cur + 2, currentSessionId, window.innerWidth < 768);
           pageFlipInstance.flipNext();
           setTimeout(() => { isFlipping = false; }, 450);
         } catch (e) {
@@ -686,7 +714,7 @@
       }
     });
 
-    // Cử chỉ cảm ứng Mobile (Chạm & Vuốt sang trang)
+    // Cử chỉ cảm ứng Mobile (Chạm & Vuốt)
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
@@ -724,14 +752,12 @@
 
       touchStartTime = 0;
 
-      // Vuốt ngang
       if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY) && duration < 500) {
         if (diffX < 0) nextPage();
         else prevPage();
         return;
       }
 
-      // Chạm (Tap)
       if (!touchMoved || (Math.abs(diffX) < 15 && Math.abs(diffY) < 15 && duration < 400)) {
         const rect = bookWrapper.getBoundingClientRect();
         const tapX = touchEndX - rect.left;
