@@ -145,7 +145,7 @@
     }
     .btn:hover { background: #475569; }
 
-    /* Khung chứa sách - Hỗ trợ chạm và vuốt */
+    /* Khung chứa sách */
     #book-wrapper {
       position: relative;
       display: flex;
@@ -176,7 +176,6 @@
       height: 100%;
       display: block;
       object-fit: contain;
-      pointer-events: none; /* Giúp sự kiện touch truyền mượt lên container */
     }
 
     .page-skeleton {
@@ -309,7 +308,7 @@
       </div>
     </div>
 
-    <!-- Vùng lật sách (Hỗ trợ chạm/vuốt) -->
+    <!-- Vùng lật sách -->
     <div id="book-wrapper"></div>
 
     <div class="reader-toolbar" style="justify-content: center; gap: 1rem;">
@@ -328,6 +327,7 @@
     let renderedPageSet = new Set();
     let renderingPageSet = new Set();
     let bookLoadInterval = null;
+    let isFlipping = false; // Cờ khóa chống lật đúp
 
     function setShelfProgress(pct, text) {
       document.getElementById("shelf-prog-bar").style.width = pct + "%";
@@ -339,6 +339,22 @@
       document.getElementById("book-prog-bar").style.width = pct + "%";
       document.getElementById("book-prog-pct").innerText = Math.round(pct) + "%";
       if (text) document.getElementById("book-prog-text").innerText = text;
+    }
+
+    // Hiển thị số trang trực quan (đơn trên Mobile, đôi trên PC)
+    function updatePageIndicator(curIndex, total, isMobile) {
+      const pageSpan = document.getElementById("current-page");
+      if (isMobile) {
+        pageSpan.innerText = curIndex + 1;
+      } else {
+        if (curIndex === 0) {
+          pageSpan.innerText = "1";
+        } else {
+          const leftP = curIndex + 1;
+          const rightP = Math.min(total, curIndex + 2);
+          pageSpan.innerText = (leftP >= rightP) ? leftP : `${leftP} - ${rightP}`;
+        }
+      }
     }
 
     // 1. Tải danh mục sách từ Drive
@@ -389,7 +405,7 @@
       }
     }
 
-    // 2. Render trang độc lập khi cần xem tới (Lazy Load)
+    // 2. Render từng trang sách khi cần xem tới (Lazy Load)
     async function renderSinglePage(pdf, pageNum, containerDiv, targetPageH, sessionId) {
       if (sessionId !== currentSessionId || renderedPageSet.has(pageNum) || renderingPageSet.has(pageNum)) return;
       renderingPageSet.add(pageNum);
@@ -423,11 +439,12 @@
       }
     }
 
-    // 3. Mở sách & Thiết lập Flipbook
+    // 3. Mở sách & Cấu hình Flipbook
     async function openBook(fileId, fileName) {
       const sessionId = ++currentSessionId;
       renderedPageSet.clear();
       renderingPageSet.clear();
+      isFlipping = false;
 
       document.getElementById("shelf-view").style.display = "none";
       document.getElementById("reader-view").style.display = "flex";
@@ -443,7 +460,6 @@
         pageFlipInstance = null;
       }
 
-      // Bộ đếm mượt mà (chống kẹt ở mốc 5%)
       clearInterval(bookLoadInterval);
       let loadPercent = 5;
       setBookProgress(5, "Đang kết nối Google Drive...");
@@ -472,7 +488,6 @@
 
         setBookProgress(88, "Đang giải mã PDF...");
 
-        // Chuyển base64 sang nhị phân
         const rawData = atob(data.data);
         const uint8Array = new Uint8Array(rawData.length);
         for (let i = 0; i < rawData.length; i++) {
@@ -484,15 +499,12 @@
         const total = currentPdfDoc.numPages;
         document.getElementById("total-pages").innerText = total;
 
-        // Lấy tỷ lệ trang PDF gốc
         const firstPage = await currentPdfDoc.getPage(1);
         const defaultVp = firstPage.getViewport({ scale: 1 });
         const pageRatio = defaultVp.width / defaultVp.height;
 
-        // Nhận diện Mobile hoặc Màn hình dọc
         const isMobile = (window.innerWidth < 768) || (window.innerWidth < window.innerHeight);
 
-        // Khoảng trống thực tế
         const headerH = 50;
         const toolbarsH = 80;
         const availH = Math.max(window.innerHeight - headerH - toolbarsH - 12, 280);
@@ -501,7 +513,6 @@
         let singlePageW, singlePageH;
 
         if (isMobile) {
-          // --- MOBILE: 1 TRANG DUY NHẤT VỪA KHÍT ---
           if (availW / availH > pageRatio) {
             singlePageH = Math.floor(availH);
             singlePageW = Math.floor(singlePageH * pageRatio);
@@ -510,7 +521,6 @@
             singlePageH = Math.floor(singlePageW / pageRatio);
           }
         } else {
-          // --- MÁY TÍNH: 2 TRANG ĐÔI MỞ RỘNG ---
           const spreadRatio = 2 * pageRatio;
           let spreadW, spreadH;
           if (availW / availH > spreadRatio) {
@@ -536,7 +546,6 @@
         }
         bookWrapper.appendChild(flipbookContainer);
 
-        // Tạo khung placeholder cho các trang
         const pageDivs = [];
         for (let i = 1; i <= total; i++) {
           const pDiv = document.createElement("div");
@@ -546,7 +555,6 @@
           pageDivs.push(pDiv);
         }
 
-        // TẢI LƯỜI: Chỉ dựng đúng trang đầu tiên để mở xem ngay
         setBookProgress(95, "Đang dựng trang sách...");
         await renderSinglePage(currentPdfDoc, 1, pageDivs[0], singlePageH, sessionId);
         if (!isMobile && total >= 2) {
@@ -556,7 +564,6 @@
         if (sessionId !== currentSessionId) return;
         setBookProgress(100, "Sẵn sàng!");
 
-        // Khởi tạo Flipbook
         pageFlipInstance = new St.PageFlip(flipbookContainer, {
           width: singlePageW,
           height: singlePageH,
@@ -572,14 +579,24 @@
         });
 
         pageFlipInstance.loadFromHTML(pageDivs);
+        updatePageIndicator(0, total, isMobile);
 
-        // Lật tới đâu dựng tới đó
+        // Theo dõi trạng thái lật để chống gọi đúp lệnh
+        pageFlipInstance.on("changeState", (e) => {
+          if (e.data === "read") {
+            isFlipping = false;
+          } else if (e.data === "flipping") {
+            isFlipping = true;
+          }
+        });
+
+        // Bắt sự kiện lật trang & Lazy-load các trang kế tiếp
         pageFlipInstance.on("flip", (e) => {
           const curIndex = e.data;
-          document.getElementById("current-page").innerText = curIndex + 1;
+          updatePageIndicator(curIndex, total, isMobile);
 
           const rangeStart = Math.max(1, curIndex);
-          const rangeEnd = Math.min(total, curIndex + (isMobile ? 2 : 3));
+          const rangeEnd = Math.min(total, curIndex + (isMobile ? 2 : 4));
           for (let p = rangeStart; p <= rangeEnd; p++) {
             renderSinglePage(currentPdfDoc, p, pageDivs[p - 1], singlePageH, sessionId);
           }
@@ -606,19 +623,34 @@
       }
     }
 
+    // Hàm chuyển trang an toàn có khóa chống click đúp
     function prevPage() {
-      if (pageFlipInstance && document.getElementById("reader-view").style.display === "flex") {
-        try { pageFlipInstance.flipPrev(); } catch (e) {}
+      if (!pageFlipInstance || isFlipping) return;
+      if (document.getElementById("reader-view").style.display === "flex") {
+        try {
+          isFlipping = true;
+          pageFlipInstance.flipPrev();
+          setTimeout(() => { isFlipping = false; }, 450);
+        } catch (e) {
+          isFlipping = false;
+        }
       }
     }
 
     function nextPage() {
-      if (pageFlipInstance && document.getElementById("reader-view").style.display === "flex") {
-        try { pageFlipInstance.flipNext(); } catch (e) {}
+      if (!pageFlipInstance || isFlipping) return;
+      if (document.getElementById("reader-view").style.display === "flex") {
+        try {
+          isFlipping = true;
+          pageFlipInstance.flipNext();
+          setTimeout(() => { isFlipping = false; }, 450);
+        } catch (e) {
+          isFlipping = false;
+        }
       }
     }
 
-    // Điều hướng bằng bàn phím (Desktop)
+    // Điều hướng bằng phím mũi tên
     window.addEventListener("keydown", (e) => {
       if (document.getElementById("reader-view").style.display === "flex") {
         if (e.key === "ArrowLeft") prevPage();
@@ -626,16 +658,14 @@
       }
     });
 
-    // --- BỘ XỬ LÝ CẢM ỨNG & CHẠM (TOUCH & GESTURES) TRÊN MOBILE ---
+    // --- BỘ XỬ LÝ CẢM ỨNG & CHẠM DÀNH RIÊNG CHO MOBILE ---
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
     let touchMoved = false;
-    let lastTouchEndTime = 0;
 
     const bookWrapper = document.getElementById("book-wrapper");
 
-    // Bắt đầu chạm
     bookWrapper.addEventListener("touchstart", (e) => {
       if (e.touches.length === 1) {
         touchStartX = e.touches[0].clientX;
@@ -645,7 +675,6 @@
       }
     }, { capture: true, passive: true });
 
-    // Đang di chuyển ngón tay
     bookWrapper.addEventListener("touchmove", (e) => {
       if (e.touches.length === 1) {
         const diffX = e.touches[0].clientX - touchStartX;
@@ -656,10 +685,8 @@
       }
     }, { capture: true, passive: true });
 
-    // Nhấc ngón tay lên
     bookWrapper.addEventListener("touchend", (e) => {
       if (touchStartTime === 0) return;
-      lastTouchEndTime = Date.now();
 
       const touchEndX = e.changedTouches[0].clientX;
       const touchEndY = e.changedTouches[0].clientY;
@@ -669,41 +696,33 @@
 
       touchStartTime = 0;
 
-      // 1. Thao tác VUỐT (Swipe ngang)
+      // 1. Thao tác VUỐT (Swipe)
       if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY) && duration < 500) {
-        if (diffX < 0) {
-          nextPage(); // Vuốt sang trái -> Sang trang sau
-        } else {
-          prevPage(); // Vuốt sang phải -> Lùi trang trước
-        }
+        if (diffX < 0) nextPage();
+        else prevPage();
         return;
       }
 
-      // 2. Thao tác CHẠM (Tap nhanh)
+      // 2. Thao tác CHẠM (Tap)
       if (!touchMoved || (Math.abs(diffX) < 15 && Math.abs(diffY) < 15 && duration < 400)) {
         const rect = bookWrapper.getBoundingClientRect();
         const tapX = touchEndX - rect.left;
         const width = rect.width;
 
-        // Chạm vào 30% bên trái: Lùi trang
-        // Chạm vào phần còn lại (70% bên phải): Sang trang mới
-        if (tapX < width * 0.3) {
-          prevPage();
-        } else {
-          nextPage();
-        }
+        if (tapX < width * 0.3) prevPage();
+        else nextPage();
       }
     }, { capture: true, passive: true });
 
-    // Hỗ trợ nhấp chuột trên Máy tính (tránh kích hoạt đúp trên mobile)
+    // Click trên PC: CHỈ xử lý khi người dùng bấm vào vùng tối bên ngoài cuốn sách
     bookWrapper.addEventListener("click", (e) => {
-      if (Date.now() - lastTouchEndTime < 500) return; // Bỏ qua click ảo phát sinh từ touchend
+      // Nếu click vào thân cuốn sách, PageFlip đã tự lật -> bỏ qua không can thiệp
+      if (e.target.closest("#flipbook")) return;
+      if (window.innerWidth < 768) return; // Bỏ qua trên mobile
 
       const rect = bookWrapper.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
-      const width = rect.width;
-
-      if (clickX < width * 0.3) {
+      if (clickX < rect.width * 0.3) {
         prevPage();
       } else {
         nextPage();
@@ -713,6 +732,7 @@
     function backToShelf() {
       currentSessionId++;
       clearInterval(bookLoadInterval);
+      isFlipping = false;
       document.getElementById("reader-view").style.display = "none";
       document.getElementById("shelf-view").style.display = "block";
 
