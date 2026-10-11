@@ -213,7 +213,7 @@
       width: 0%;
       background: linear-gradient(90deg, #0284c7, #38bdf8);
       border-radius: 999px;
-      transition: width 0.15s ease-out;
+      transition: width 0.2s ease-out;
     }
 
     #loading-book-overlay {
@@ -320,6 +320,7 @@
     let currentPdfDoc = null;
     let renderedPageSet = new Set();
     let renderingPageSet = new Set();
+    let bookLoadInterval = null;
 
     function setShelfProgress(pct, text) {
       document.getElementById("shelf-prog-bar").style.width = pct + "%";
@@ -371,7 +372,7 @@
             <div class="book-title" title="${file.name}">${file.name.replace(/\.pdf$/i, '')}</div>
             <div class="book-meta">Dung lượng: ${file.size}</div>
           `;
-          card.onclick = () => openBook(file.id, file.name, file.size);
+          card.onclick = () => openBook(file.id, file.name);
           shelfGrid.appendChild(card);
         });
 
@@ -381,7 +382,7 @@
       }
     }
 
-    // 2. Render trang độc lập khi người đọc cần xem tới (Lazy Load)
+    // 2. Render trang độc lập khi cần xem tới (Lazy Load)
     async function renderSinglePage(pdf, pageNum, containerDiv, targetPageH, sessionId) {
       if (sessionId !== currentSessionId || renderedPageSet.has(pageNum) || renderingPageSet.has(pageNum)) return;
       renderingPageSet.add(pageNum);
@@ -389,7 +390,6 @@
       try {
         const page = await pdf.getPage(pageNum);
         const baseVp = page.getViewport({ scale: 1 });
-        // Độ phân giải scale tối ưu theo màn hình
         const scale = (targetPageH / baseVp.height) * (window.devicePixelRatio > 1 ? 1.8 : 1.4);
         const viewport = page.getViewport({ scale: Math.max(scale, 1.2) });
 
@@ -417,7 +417,7 @@
     }
 
     // 3. Mở sách & Thiết lập Flipbook
-    async function openBook(fileId, fileName, fileSizeStr) {
+    async function openBook(fileId, fileName) {
       const sessionId = ++currentSessionId;
       renderedPageSet.clear();
       renderingPageSet.clear();
@@ -428,7 +428,6 @@
       
       const overlay = document.getElementById("loading-book-overlay");
       overlay.style.display = "flex";
-      setBookProgress(5, "Đang kết nối Drive...");
 
       const bookWrapper = document.getElementById("book-wrapper");
       bookWrapper.innerHTML = "";
@@ -437,57 +436,34 @@
         pageFlipInstance = null;
       }
 
-      try {
-        // Ước tính dung lượng để chạy thanh phần trăm theo thời gian thực
-        let approxTotalBytes = 4 * 1024 * 1024;
-        if (fileSizeStr) {
-          const num = parseFloat(fileSizeStr);
-          if (fileSizeStr.includes("MB")) approxTotalBytes = num * 1024 * 1024 * 1.37;
-          else if (fileSizeStr.includes("KB")) approxTotalBytes = num * 1024 * 1.37;
+      // Bộ đếm mượt mà (chống kẹt ở mốc 5%)
+      clearInterval(bookLoadInterval);
+      let loadPercent = 5;
+      setBookProgress(5, "Đang kết nối Google Drive...");
+      bookLoadInterval = setInterval(() => {
+        if (loadPercent < 30) {
+          loadPercent += 4;
+          setBookProgress(loadPercent, "Đang kết nối Google Drive...");
+        } else if (loadPercent < 60) {
+          loadPercent += 3;
+          setBookProgress(loadPercent, "Đang đọc tệp sách từ Drive...");
+        } else if (loadPercent < 85) {
+          loadPercent += 1;
+          setBookProgress(loadPercent, "Đang nạp dữ liệu cuốn sách...");
         }
+      }, 180);
 
+      try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?id=${fileId}`);
         if (!response.ok) throw new Error("HTTP " + response.status);
 
-        // Đọc luồng dữ liệu (ReadableStream) để cập nhật % liên tục không bị kẹt
-        let jsonText = "";
-        if (response.body && response.body.getReader) {
-          const reader = response.body.getReader();
-          let received = 0;
-          const chunks = [];
-
-          while (true) {
-            if (sessionId !== currentSessionId) return;
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            received += value.length;
-            const pct = Math.min(85, Math.max(10, Math.round((received / approxTotalBytes) * 85)));
-            const mb = (received / (1024 * 1024)).toFixed(1);
-            setBookProgress(pct, `Đang tải: ${mb} MB...`);
-          }
-
-          setBookProgress(88, "Đang xử lý dữ liệu...");
-          const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
-          const allBytes = new Uint8Array(totalLen);
-          let offset = 0;
-          for (const c of chunks) {
-            allBytes.set(c, offset);
-            offset += c.length;
-          }
-          jsonText = new TextDecoder("utf-8").decode(allBytes);
-        } else {
-          // Fallback nếu trình duyệt cũ không hỗ trợ stream reader
-          setBookProgress(50, "Đang nạp dữ liệu...");
-          const res = await response.json();
-          jsonText = JSON.stringify(res);
-        }
+        const data = await response.json();
+        clearInterval(bookLoadInterval);
 
         if (sessionId !== currentSessionId) return;
-        const data = JSON.parse(jsonText);
         if (!data.success) throw new Error(data.error);
 
-        setBookProgress(92, "Đang giải mã PDF...");
+        setBookProgress(88, "Đang giải mã PDF...");
 
         // Chuyển base64 sang nhị phân
         const rawData = atob(data.data);
@@ -501,15 +477,15 @@
         const total = currentPdfDoc.numPages;
         document.getElementById("total-pages").innerText = total;
 
-        // Lấy tỷ lệ trang PDF
+        // Lấy tỷ lệ trang PDF gốc
         const firstPage = await currentPdfDoc.getPage(1);
         const defaultVp = firstPage.getViewport({ scale: 1 });
         const pageRatio = defaultVp.width / defaultVp.height;
 
-        // KIỂM TRA MÀN HÌNH: Điện thoại hoặc Màn hình dọc -> 1 TRANG DUY NHẤT
+        // Nhận diện Mobile hoặc Màn hình dọc
         const isMobile = (window.innerWidth < 768) || (window.innerWidth < window.innerHeight);
 
-        // Đo khoảng trống màn hình thực tế
+        // Khoảng trống thực tế
         const headerH = 50;
         const toolbarsH = 80;
         const availH = Math.max(window.innerHeight - headerH - toolbarsH - 12, 280);
@@ -518,7 +494,7 @@
         let singlePageW, singlePageH;
 
         if (isMobile) {
-          // --- CHẾ ĐỘ 1 TRANG (MOBILE) ---
+          // --- MOBILE: 1 TRANG DUY NHẤT VỪA KHÍT ---
           if (availW / availH > pageRatio) {
             singlePageH = Math.floor(availH);
             singlePageW = Math.floor(singlePageH * pageRatio);
@@ -527,7 +503,7 @@
             singlePageH = Math.floor(singlePageW / pageRatio);
           }
         } else {
-          // --- CHẾ ĐỘ 2 TRANG ĐÔI (MÁY TÍNH) ---
+          // --- MÁY TÍNH: 2 TRANG ĐÔI MỞ RỘNG ---
           const spreadRatio = 2 * pageRatio;
           let spreadW, spreadH;
           if (availW / availH > spreadRatio) {
@@ -541,21 +517,11 @@
           singlePageH = Math.floor(spreadH);
         }
 
-        // Tạo khung Flipbook được KHÓA CỨNG kích thước chuẩn xác
         const flipbookContainer = document.createElement("div");
         flipbookContainer.id = "flipbook";
-        
-        // Khóa chặt kích thước khung để không bao giờ bị xẻ đôi trang trên mobile
-        if (isMobile) {
-          flipbookContainer.style.width = singlePageW + "px";
-          flipbookContainer.style.height = singlePageH + "px";
-        } else {
-          flipbookContainer.style.width = (singlePageW * 2) + "px";
-          flipbookContainer.style.height = singlePageH + "px";
-        }
         bookWrapper.appendChild(flipbookContainer);
 
-        // Tạo placeholder cho tất cả các trang
+        // Tạo khung placeholder cho các trang
         const pageDivs = [];
         for (let i = 1; i <= total; i++) {
           const pDiv = document.createElement("div");
@@ -565,8 +531,8 @@
           pageDivs.push(pDiv);
         }
 
-        // TẢI TỪ TỪ: Chỉ render trang đầu tiên (và trang 2 nếu là máy tính)
-        setBookProgress(96, "Đang dựng trang mở đầu...");
+        // TẢI LƯỜI: Chỉ dựng đúng trang đầu tiên để mở xem ngay
+        setBookProgress(95, "Đang dựng trang sách...");
         await renderSinglePage(currentPdfDoc, 1, pageDivs[0], singlePageH, sessionId);
         if (!isMobile && total >= 2) {
           await renderSinglePage(currentPdfDoc, 2, pageDivs[1], singlePageH, sessionId);
@@ -585,19 +551,18 @@
           minHeight: 150,
           maxHeight: 2500,
           maxShadowOpacity: 0.35,
-          showCover: !isMobile, // Mobile tắt showCover để trang 1 không bị hiểu nhầm là bìa gập
+          showCover: !isMobile, // Tắt showCover trên mobile để trang 1 không bị hiểu nhầm là bìa gập
           mobileScrollSupport: false,
-          usePortrait: isMobile // Bật portrait mode trên mobile ép 1 trang đơn
+          usePortrait: isMobile // Buộc hiển thị 1 trang đơn trên mobile
         });
 
         pageFlipInstance.loadFromHTML(pageDivs);
 
-        // Bắt sự kiện lật trang: Chỉ nạp thêm các trang người đọc chuẩn bị lật tới
+        // Lật tới đâu dựng tới đó (Không render cả quyển)
         pageFlipInstance.on("flip", (e) => {
-          const curIndex = e.data; // 0-based
+          const curIndex = e.data;
           document.getElementById("current-page").innerText = curIndex + 1;
 
-          // Render trang hiện tại và chuẩn bị trước 1-2 trang tiếp theo
           const rangeStart = Math.max(1, curIndex);
           const rangeEnd = Math.min(total, curIndex + (isMobile ? 2 : 3));
           for (let p = rangeStart; p <= rangeEnd; p++) {
@@ -605,14 +570,14 @@
           }
         });
 
-        // Đệm trước trang 2 (để lật sang trang 2 là có ngay)
+        // Dựng trước trang 2 trong nền để chuẩn bị sẵn
         if (total >= 2) {
           setTimeout(() => {
             renderSinglePage(currentPdfDoc, 2, pageDivs[1], singlePageH, sessionId);
           }, 300);
         }
 
-        // Ẩn màn hình loading
+        // Mở sách
         setTimeout(() => {
           if (sessionId === currentSessionId) {
             overlay.style.display = "none";
@@ -620,6 +585,7 @@
         }, 200);
 
       } catch (err) {
+        clearInterval(bookLoadInterval);
         if (sessionId === currentSessionId) {
           alert("Lỗi tải sách: " + err.message);
           backToShelf();
@@ -644,6 +610,7 @@
 
     function backToShelf() {
       currentSessionId++;
+      clearInterval(bookLoadInterval);
       document.getElementById("reader-view").style.display = "none";
       document.getElementById("shelf-view").style.display = "block";
 
