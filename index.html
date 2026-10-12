@@ -249,7 +249,7 @@
     }
     .chap-item.read:hover { background: #334155; color: #ffffff; }
 
-    /* GIAO DIỆN 3: TRÌNH ĐỌC LẬT SÁCH (CANVAS) */
+    /* GIAO DIỆN 3: TRÌNH ĐỌC LẬT SÁCH */
     #reader-view {
       display: none;
       flex-direction: column;
@@ -347,7 +347,7 @@
       gap: 0.6rem;
     }
 
-    /* Progress Bar */
+    /* Progress UI */
     .progress-box {
       width: 100%;
       max-width: 380px;
@@ -432,15 +432,21 @@
 
   <!-- MÀN HÌNH 1: KỆ SÁCH (HOME) -->
   <main id="shelf-view">
-    <div style="display: flex; justify-content: space-between; align-items: baseline;">
-      <h2>Danh mục truyện tranh</h2>
-      <span id="file-counter" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <div style="display: flex; align-items: baseline; gap: 0.8rem;">
+        <h2>Danh mục truyện tranh</h2>
+        <span id="file-counter" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+      </div>
+      <!-- NÚT ÉP ĐỒNG BỘ LẠI GOOGLE DRIVE -->
+      <button class="btn btn-accent" onclick="syncDriveNow()" title="Bấm khi bạn vừa tải thêm truyện mới lên Google Drive">
+        🔄 Reload
+      </button>
     </div>
 
     <div id="loading-shelf" style="display: flex; justify-content: center; padding: 3rem 1rem;">
       <div class="progress-box">
         <div class="progress-header">
-          <span id="shelf-prog-text">Đang đồng bộ Google Drive...</span>
+          <span id="shelf-prog-text">Đang Reload...</span>
           <span id="shelf-prog-pct" style="color: var(--accent);">0%</span>
         </div>
         <div class="progress-track">
@@ -588,38 +594,50 @@
     }
 
     // 1. Tải kệ sách
-    async function fetchBookList() {
-      // Dùng key v3 để tự động làm sạch cache thumbnail cũ
-      const cachedBooks = localStorage.getItem("cached_book_list_v3");
-      if (cachedBooks) {
-        try {
-          const books = JSON.parse(cachedBooks);
-          renderBookGrid(books);
-          document.getElementById("loading-shelf").style.display = "none";
-          document.getElementById("status-tag").innerText = "Sẵn sàng";
-        } catch(e) {}
-      } else {
-        setShelfProgress(35, "Đang kết nối Google Drive...");
+    async function fetchBookList(forceRefresh = false) {
+      const cacheKey = "cached_book_list_v4";
+      
+      if (!forceRefresh) {
+        const cachedBooks = localStorage.getItem(cacheKey);
+        if (cachedBooks) {
+          try {
+            const books = JSON.parse(cachedBooks);
+            renderBookGrid(books);
+            document.getElementById("loading-shelf").style.display = "none";
+            document.getElementById("status-tag").innerText = "Sẵn sàng (Đã lưu cache)";
+            return;
+          } catch(e) {}
+        }
       }
 
+      document.getElementById("loading-shelf").style.display = "flex";
+      setShelfProgress(35, forceRefresh ? "Đang quét lại..." : "Đang kết nối...");
+
       try {
-        const response = await fetch(GOOGLE_SCRIPT_URL);
+        const fetchUrl = forceRefresh ? `${GOOGLE_SCRIPT_URL}?refresh=1&t=${Date.now()}` : GOOGLE_SCRIPT_URL;
+        const response = await fetch(fetchUrl);
         const res = await response.json();
 
         if (!res.success) throw new Error(res.error);
 
         const books = res.books || [];
-        localStorage.setItem("cached_book_list_v3", JSON.stringify(books));
+        localStorage.setItem(cacheKey, JSON.stringify(books));
         
         renderBookGrid(books);
         document.getElementById("loading-shelf").style.display = "none";
-        document.getElementById("status-tag").innerText = "Đã đồng bộ Drive";
+        document.getElementById("status-tag").innerText = "Đã reload";
 
       } catch (err) {
-        if (!cachedBooks) {
-          document.getElementById("loading-shelf").innerHTML = `<div style="color:#ef4444; text-align:center;">Lỗi nạp danh mục: ${err.message}</div>`;
-        }
+        document.getElementById("loading-shelf").innerHTML = `<div style="color:#ef4444; text-align:center;">Lỗi nạp danh mục: ${err.message}</div>`;
       }
+    }
+
+    // Nút cưỡng chế đồng bộ ngay lập tức
+    function syncDriveNow() {
+      // Xóa sạch cache cũ trên trình duyệt
+      localStorage.removeItem("cached_book_list_v4");
+      sessionStorage.clear();
+      fetchBookList(true);
     }
 
     function renderBookGrid(books) {
@@ -651,7 +669,7 @@
       });
     }
 
-    // 2. Chi tiết truyện (Đảm bảo ảnh bìa luôn lấy từ trang đầu tiên 0001)
+    // 2. Chi tiết truyện
     function openBookDetail(book) {
       selectedBook = book;
 
@@ -676,12 +694,12 @@
       renderDetailChapGrid(book.id, totalChaps, book.pageCount);
       window.scrollTo(0, 0);
 
-      // NẠP NGẦM DANH SÁCH TRANG: KHÓA CHÍNH XÁC ẢNH 0001 LÀM THUMBNAIL & GIÚP MỞ TRUYỆN SIÊU TỐC
+      // Nạp ngầm danh sách trang để gán ảnh bìa 0001 chuẩn và mở đọc ngay
       prefetchBookPages(book);
     }
 
     async function prefetchBookPages(book) {
-      const cacheKey = `comic_pages_v3_${book.id}`;
+      const cacheKey = `comic_pages_v4_${book.id}`;
       let pageData = null;
       try {
         const cached = localStorage.getItem(cacheKey);
@@ -699,7 +717,6 @@
         } catch (e) {}
       }
 
-      // Luôn gán trang đầu tiên (0001) cho ảnh bìa
       if (pageData && pageData.length > 0) {
         const trueFirstThumbId = pageData[0].id;
         const trueThumbUrl = getDriveImageUrl(trueFirstThumbId, 800);
@@ -766,7 +783,7 @@
       setBookProgress(30, "Đang nạp cấu trúc trang tranh...");
 
       try {
-        const cacheKey = `comic_pages_v3_${selectedBook.id}`;
+        const cacheKey = `comic_pages_v4_${selectedBook.id}`;
         let pageData = null;
         try {
           const cached = localStorage.getItem(cacheKey);
@@ -1088,7 +1105,7 @@
       selectedBook = null;
     }
 
-    window.addEventListener("DOMContentLoaded", fetchBookList);
+    window.addEventListener("DOMContentLoaded", () => fetchBookList(false));
   </script>
 </body>
 </html>
