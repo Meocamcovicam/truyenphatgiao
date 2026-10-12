@@ -1243,4 +1243,21 @@
       isFlipping = false;
       resetZoom();
       document.getElementById("reader-view").style.display = "none";
-      document.getElementById("detail-
+      document.getElementById("detail-view").style.display = "none";
+      document.getElementById("shelf-view").style.display = "block";
+
+      const bookWrapper = document.getElementById("book-wrapper");
+      bookWrapper.innerHTML = "";
+
+      if (pageFlipInstance) {
+        try { pageFlipInstance.destroy(); } catch (e) {}
+        pageFlipInstance = null;
+      }
+      currentChapImages = [];
+      selectedBook = null;
+    }
+
+    window.addEventListener("DOMContentLoaded", fetchBookList);
+  </script>
+</body>
+</html>
