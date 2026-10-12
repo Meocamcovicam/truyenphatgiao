@@ -7,6 +7,8 @@
   
   <!-- PDF.js Engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- PageFlip Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 
   <style>
     :root {
@@ -249,7 +251,7 @@
     }
     .chap-item.read:hover { background: #334155; color: #ffffff; }
 
-    /* GIAO DIỆN 3: TRÌNH ĐỌC TRUYỆN SIÊU TỐC */
+    /* GIAO DIỆN 3: TRÌNH ĐỌC LẬT SÁCH (CANVAS) */
     #reader-view {
       display: none;
       flex-direction: column;
@@ -354,31 +356,10 @@
       touch-action: pan-y;
     }
 
-    /* KHUNG HIỂN THỊ TRANG CANVAS ĐỘ PHÂN GIẢI CAO */
-    #page-stage {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 4px;
+    #flipbook {
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
       transform-origin: center center;
       transition: transform 0.05s linear;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    .canvas-page-wrapper {
-      background: #090e1a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .canvas-page-wrapper canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: high-quality;
     }
@@ -559,7 +540,7 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC TRUYỆN SIÊU TỐC (DIRECT READER) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC LẬT SÁCH (CANVAS ENGINE) -->
   <div id="reader-view">
     <div class="reader-toolbar">
       <button class="btn" onclick="backToDetail()">← Danh mục chap</button>
@@ -586,9 +567,7 @@
       </div>
     </div>
 
-    <div id="book-wrapper">
-      <div id="page-stage"></div>
-    </div>
+    <div id="book-wrapper"></div>
 
     <div class="bottom-bar">
       <button class="btn" onclick="prevPage()">‹ Trang trước</button>
@@ -621,14 +600,14 @@
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
+    let pageFlipInstance = null;
     let currentSessionId = 0;
     let selectedBook = null;
     let bookChapters = [];
+    let currentChapImages = [];
     let currentChapIndex = 0;
-    let currentPdfDoc = null;
     let currentNumPages = 0;
-    let curPageNum = 1; // Số trang hiện tại (1-based)
-    let isRendering = false;
+    let isFlipping = false;
 
     // Quản lý Zoom & Pan
     let currentZoom = 1;
@@ -638,17 +617,13 @@
     let dragStartX = 0;
     let dragStartY = 0;
 
-    // Kích thước khung hiển thị trang
-    let singlePageW = 400;
-    let singlePageH = 600;
-    let isMobileView = false;
-
-    // Bộ nhớ đệm PDF trong RAM & IndexedDB
+    // Bộ nhớ đệm PDF & Blob URLs
     const memoryPdfCache = new Map();
+    const renderedChapUrlsCache = new Map();
 
     function openPdfDB() {
       return new Promise((resolve) => {
-        const req = indexedDB.open("MangaPdfStore_v3", 1);
+        const req = indexedDB.open("MangaPdfStore_v2", 1);
         req.onupgradeneeded = (e) => e.target.result.createObjectStore("chap_pdfs");
         req.onsuccess = (e) => resolve(e.target.result);
         req.onerror = () => resolve(null);
@@ -823,7 +798,7 @@
           }
           renderDetailChapGrid(book.id, bookChapters);
 
-          // Tải trước ngầm file PDF Chap 1 ngay lập tức
+          // Tải trước ngầm file PDF Chap 1
           if (bookChapters.length > 0) {
             fetchAndCachePdf(bookChapters[0].id);
           }
@@ -843,21 +818,22 @@
         const btn = document.createElement("div");
         btn.className = `chap-item ${isRead ? 'read' : 'unread'}`;
         btn.innerHTML = `<div>Chap ${idx + 1}</div>`;
-        btn.onclick = () => startReadingChapter(idx, 1);
+        btn.onclick = () => startReadingChapter(idx, 0);
         grid.appendChild(btn);
       });
     }
 
     function readFromBeginning() {
-      startReadingChapter(0, 1);
+      startReadingChapter(0, 0);
     }
 
-    // 3. MỞ ĐỌC CHAP SIÊU TỐC (CHỈ DỰNG ĐÚNG TRANG ĐANG XEM - MỞ RA NGAY TRONG 0.2s)
-    async function startReadingChapter(chapIdx = 0, targetPage = 1) {
+    // 3. MỞ ĐỌC CHAP SIÊU TỐC VỚI CANVAS ENGINE: LẬT MƯỢT CẢ 2 BÊN, KHÔNG LỖI BUFFER
+    async function startReadingChapter(chapIdx = 0, targetPage = 0) {
       if (!selectedBook || !bookChapters[chapIdx]) return;
 
       const sessionId = ++currentSessionId;
       currentChapIndex = chapIdx;
+      isFlipping = false;
       resetZoom();
 
       const chapFile = bookChapters[chapIdx];
@@ -870,36 +846,105 @@
       const overlay = document.getElementById("loading-book-overlay");
       overlay.style.display = "flex";
 
-      setBookProgress(30, `Đang mở Chap ${chapIdx + 1}...`);
+      const bookWrapper = document.getElementById("book-wrapper");
+      bookWrapper.innerHTML = "";
+      if (pageFlipInstance) {
+        try { pageFlipInstance.destroy(); } catch (e) {}
+        pageFlipInstance = null;
+      }
+
+      // Thanh tiến trình chạy mượt
+      let loadPercent = 25;
+      setBookProgress(loadPercent, `Đang mở Chap ${chapIdx + 1}...`);
+      const ticker = setInterval(() => {
+        if (loadPercent < 75) {
+          loadPercent += 12;
+          setBookProgress(loadPercent, `Đang xử lý trang truyện...`);
+        }
+      }, 70);
 
       try {
-        // Lấy PDF bytes từ cache hoặc tải về
-        const pdfBytes = await fetchAndCachePdf(chapFile.id);
+        let imageUrls = renderedChapUrlsCache.get(chapFile.id);
+
+        if (!imageUrls) {
+          // Lấy PDF từ IndexedDB hoặc tải từ Apps Script
+          const pdfBytes = await fetchAndCachePdf(chapFile.id);
+          clearInterval(ticker);
+
+          if (sessionId !== currentSessionId) return;
+          if (!pdfBytes) throw new Error("Không thể tải file PDF Chap.");
+
+          // FIX TRIỆT ĐỂ LỖI DETACHED BUFFER: LUÔN DÙNG .slice() TẠO BẢN SAO CHO WORKER
+          const safeBufferCopy = pdfBytes.slice();
+          const pdfDoc = await pdfjsLib.getDocument({ data: safeBufferCopy }).promise;
+          currentNumPages = pdfDoc.numPages;
+
+          if (currentNumPages === 0) throw new Error("File PDF không có trang nào.");
+
+          const page1 = await pdfDoc.getPage(1);
+          const vp1 = page1.getViewport({ scale: 1.0 });
+
+          // Kết xuất kích thước tối ưu theo chiều cao nét chuẩn gốc
+          const targetH = Math.max(1600, Math.min(2200, Math.round(vp1.height * (window.devicePixelRatio || 1) * 1.3)));
+          const renderScale = targetH / vp1.height;
+
+          // Kết xuất song song theo luồng tối ưu (3 trang/lượt)
+          imageUrls = new Array(currentNumPages);
+          const concurrency = 3;
+
+          for (let i = 1; i <= currentNumPages; i += concurrency) {
+            if (sessionId !== currentSessionId) return;
+            const batch = [];
+            for (let j = i; j < i + concurrency && j <= currentNumPages; j++) {
+              batch.push((async (p) => {
+                const page = await pdfDoc.getPage(p);
+                const viewport = page.getViewport({ scale: renderScale });
+                const canvas = document.createElement("canvas");
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const ctx = canvas.getContext("2d");
+                await page.render({ canvasContext: ctx, viewport }).promise;
+
+                // Tạo Blob URL siêu nhẹ, siêu nhanh
+                const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.90));
+                urls = URL.createObjectURL(blob);
+                imageUrls[p - 1] = urls;
+                canvas.width = 1;
+                canvas.height = 1;
+              })(j));
+            }
+            await Promise.all(batch);
+            setBookProgress(Math.min(95, 40 + Math.round((i / currentNumPages) * 55)), `Đang xử lý: ${Math.min(currentNumPages, i + concurrency - 1)}/${currentNumPages} trang...`);
+          }
+
+          renderedChapUrlsCache.set(chapFile.id, imageUrls);
+        } else {
+          clearInterval(ticker);
+          currentNumPages = imageUrls.length;
+        }
 
         if (sessionId !== currentSessionId) return;
-        if (!pdfBytes) throw new Error("Không thể tải file PDF Chap.");
+        setBookProgress(100, "Sẵn sàng!");
 
-        setBookProgress(65, "Khởi tạo trang...");
+        currentChapImages = imageUrls;
 
-        // FIX TRIỆT ĐỂ LỖI DETACHED BUFFER: LUÔN DÙNG .slice() TẠO BẢN SAO CHO WORKER
-        const safeBuffer = pdfBytes.slice();
-        currentPdfDoc = await pdfjsLib.getDocument({ data: safeBuffer }).promise;
-        currentNumPages = currentPdfDoc.numPages;
+        // Tính kích thước hiển thị theo khung màn hình
+        const firstImg = new Image();
+        firstImg.src = currentChapImages[0];
+        await new Promise(r => { firstImg.onload = r; firstImg.onerror = r; });
 
-        if (currentNumPages === 0) throw new Error("File PDF không có trang nào.");
+        const pageRatio = (firstImg.naturalWidth && firstImg.naturalHeight)
+          ? (firstImg.naturalWidth / firstImg.naturalHeight)
+          : 0.707;
 
-        // Tính toán kích thước hiển thị
-        const page1 = await currentPdfDoc.getPage(1);
-        const vp1 = page1.getViewport({ scale: 1.0 });
-        const pageRatio = vp1.width / vp1.height;
-
-        isMobileView = (window.innerWidth < 768) || (window.innerWidth < window.innerHeight);
+        const isMobile = (window.innerWidth < 768) || (window.innerWidth < window.innerHeight);
         const headerH = 50;
         const toolbarsH = 80;
         const availH = Math.max(window.innerHeight - headerH - toolbarsH - 12, 280);
         const availW = Math.max(window.innerWidth - 16, 260);
 
-        if (isMobileView) {
+        let singlePageW, singlePageH;
+        if (isMobile) {
           if (availW / availH > pageRatio) {
             singlePageH = Math.floor(availH);
             singlePageW = Math.floor(singlePageH * pageRatio);
@@ -921,55 +966,72 @@
           singlePageH = Math.floor(spreadH);
         }
 
-        // Tạo khung sân khấu hiển thị trang
-        const stage = document.getElementById("page-stage");
-        stage.innerHTML = "";
-
-        if (isMobileView) {
-          stage.innerHTML = `
-            <div class="canvas-page-wrapper" id="wrap-page-left" style="width:${singlePageW}px; height:${singlePageH}px;">
-              <canvas id="canvas-page-left"></canvas>
-            </div>
-          `;
+        const flipbookContainer = document.createElement("div");
+        flipbookContainer.id = "flipbook";
+        
+        if (isMobile) {
+          flipbookContainer.style.width = singlePageW + "px";
+          flipbookContainer.style.height = singlePageH + "px";
         } else {
-          stage.innerHTML = `
-            <div class="canvas-page-wrapper" id="wrap-page-left" style="width:${singlePageW}px; height:${singlePageH}px;">
-              <canvas id="canvas-page-left"></canvas>
-            </div>
-            <div class="canvas-page-wrapper" id="wrap-page-right" style="width:${singlePageW}px; height:${singlePageH}px;">
-              <canvas id="canvas-page-right"></canvas>
-            </div>
-          `;
+          flipbookContainer.style.width = (singlePageW * 2) + "px";
+          flipbookContainer.style.height = singlePageH + "px";
         }
+        bookWrapper.appendChild(flipbookContainer);
 
-        // Xác định trang bắt đầu: 1 (đầu chap) hoặc trang cuối nếu lùi từ chap sau
+        // Xác định trang bắt đầu: 0 (đầu chap) hoặc trang cuối nếu lùi từ chap sau
+        let startPageIdx = 0;
         if (targetPage === -1) {
-          if (isMobileView) {
-            curPageNum = currentNumPages;
+          if (isMobile) {
+            startPageIdx = currentNumPages - 1;
           } else {
-            curPageNum = (currentNumPages % 2 === 0) ? currentNumPages - 1 : currentNumPages;
+            startPageIdx = (currentNumPages % 2 === 0) ? currentNumPages - 2 : currentNumPages - 1;
           }
         } else {
-          curPageNum = Math.max(1, Math.min(currentNumPages, targetPage));
-          if (!isMobileView && curPageNum % 2 === 0) curPageNum -= 1; // Luôn bắt đầu từ trang lẻ trên PC
+          startPageIdx = Math.max(0, Math.min(currentNumPages - 1, targetPage));
         }
 
-        setBookProgress(90, "Đang kết xuất nét trang...");
+        // KHỞI TẠO BẰNG CANVAS ENGINE CHUẨN (loadFromImages):
+        // Cả 2 trang và trang bên dưới được vẽ thời gian thực trên Canvas, xóa bỏ hoàn toàn hiện tượng trễ trang bên phải
+        pageFlipInstance = new St.PageFlip(flipbookContainer, {
+          width: singlePageW,
+          height: singlePageH,
+          size: "fixed",
+          minWidth: 150,
+          maxWidth: 2500,
+          minHeight: 150,
+          maxHeight: 2500,
+          maxShadowOpacity: 0.35,
+          showCover: false,
+          mobileScrollSupport: false,
+          usePortrait: isMobile,
+          startPage: startPageIdx
+        });
 
-        // DỰNG DUY NHẤT CÁC TRANG HIỆN TẠI ĐỂ MỞ XEM NGAY LẬP TỨC
-        await renderCurrentStagePages(sessionId);
-
-        if (sessionId !== currentSessionId) return;
-        setBookProgress(100, "Sẵn sàng!");
-
+        pageFlipInstance.loadFromImages(currentChapImages);
+        updatePageUI(startPageIdx, isMobile);
         markChapAsRead(selectedBook.id, chapIdx);
+
+        pageFlipInstance.on("changeState", (e) => {
+          if (e.data === "read") {
+            isFlipping = false;
+          } else if (e.data === "flipping" || e.data === "user_fold") {
+            isFlipping = true;
+          }
+        });
+
+        pageFlipInstance.on("flip", (e) => {
+          const curIndex = e.data;
+          updatePageUI(curIndex, isMobile);
+        });
+
         overlay.style.display = "none";
 
-        // Tải trước ngầm các Chap liền kề để sẵn sàng lật sang tức thì
+        // Tải trước ngầm các Chap liền kề để chuyển Chap tức thì
         if (bookChapters[chapIdx + 1]) fetchAndCachePdf(bookChapters[chapIdx + 1].id);
         if (bookChapters[chapIdx - 1]) fetchAndCachePdf(bookChapters[chapIdx - 1].id);
 
       } catch (err) {
+        clearInterval(ticker);
         if (sessionId === currentSessionId) {
           alert("Lỗi tải Chap: " + err.message);
           backToDetail();
@@ -977,66 +1039,18 @@
       }
     }
 
-    // KẾT XUẤT TRANG HIỆN TẠI LÊN CANVAS (SIÊU NHANH & NÉT CHUẨN HI-DPI RETINA)
-    async function renderCurrentStagePages(sessionId) {
-      if (!currentPdfDoc || sessionId !== currentSessionId) return;
-      isRendering = true;
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
-
-      // Cập nhật số trang hiển thị
+    function updatePageUI(curIndex, isMobile) {
       const pageSpan = document.getElementById("current-page");
-      if (isMobileView) {
-        pageSpan.innerText = `${curPageNum}/${currentNumPages}`;
+      if (isMobile) {
+        pageSpan.innerText = `${curIndex + 1}/${currentNumPages}`;
       } else {
-        const leftP = curPageNum;
-        const rightP = curPageNum + 1;
+        const leftP = curIndex + 1;
+        const rightP = curIndex + 2;
         if (rightP <= currentNumPages) {
           pageSpan.innerText = `${leftP}-${rightP}/${currentNumPages}`;
         } else {
           pageSpan.innerText = `${leftP}/${currentNumPages}`;
         }
-      }
-
-      try {
-        // Trang bên trái
-        const pLeft = await currentPdfDoc.getPage(curPageNum);
-        const vpLeftBase = pLeft.getViewport({ scale: 1.0 });
-        const scaleLeft = (singlePageH * dpr) / vpLeftBase.height;
-        const vpLeft = pLeft.getViewport({ scale: scaleLeft });
-
-        const canvasLeft = document.getElementById("canvas-page-left");
-        if (canvasLeft) {
-          canvasLeft.width = vpLeft.width;
-          canvasLeft.height = vpLeft.height;
-          const ctxLeft = canvasLeft.getContext("2d");
-          await pLeft.render({ canvasContext: ctxLeft, viewport: vpLeft }).promise;
-        }
-
-        // Trang bên phải (chỉ trên PC)
-        if (!isMobileView) {
-          const wrapRight = document.getElementById("wrap-page-right");
-          const canvasRight = document.getElementById("canvas-page-right");
-
-          if (curPageNum + 1 <= currentNumPages) {
-            wrapRight.style.visibility = "visible";
-            const pRight = await currentPdfDoc.getPage(curPageNum + 1);
-            const vpRightBase = pRight.getViewport({ scale: 1.0 });
-            const scaleRight = (singlePageH * dpr) / vpRightBase.height;
-            const vpRight = pRight.getViewport({ scale: scaleRight });
-
-            canvasRight.width = vpRight.width;
-            canvasRight.height = vpRight.height;
-            const ctxRight = canvasRight.getContext("2d");
-            await pRight.render({ canvasContext: ctxRight, viewport: vpRight }).promise;
-          } else {
-            wrapRight.style.visibility = "hidden"; // Hết trang lẻ thì ẩn trang phải
-          }
-        }
-      } catch (err) {
-        console.warn("Lỗi vẽ canvas:", err);
-      } finally {
-        isRendering = false;
       }
     }
 
@@ -1044,8 +1058,8 @@
     // CƠ CHẾ SLIDE ZOOM (THANH TRƯỢT) & PAN
     // ==========================================
     function applyZoomTransform() {
-      const stage = document.getElementById("page-stage");
-      if (!stage) return;
+      const flipbook = document.getElementById("flipbook");
+      if (!flipbook) return;
 
       clampPan();
 
@@ -1053,11 +1067,11 @@
         currentZoom = 1;
         currentPanX = 0;
         currentPanY = 0;
-        stage.style.transform = "";
-        stage.style.cursor = "";
+        flipbook.style.transform = "";
+        flipbook.style.cursor = "";
       } else {
-        stage.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
-        stage.style.cursor = isDragging ? "grabbing" : "grab";
+        flipbook.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
+        flipbook.style.cursor = isDragging ? "grabbing" : "grab";
       }
 
       const slider = document.getElementById("zoom-slider");
@@ -1072,10 +1086,10 @@
         currentPanY = 0;
         return;
       }
-      const stage = document.getElementById("page-stage");
-      if (!stage) return;
-      const maxPanX = (stage.offsetWidth * (currentZoom - 1)) / 2 + 100;
-      const maxPanY = (stage.offsetHeight * (currentZoom - 1)) / 2 + 100;
+      const flipbook = document.getElementById("flipbook");
+      if (!flipbook) return;
+      const maxPanX = (flipbook.offsetWidth * (currentZoom - 1)) / 2 + 100;
+      const maxPanY = (flipbook.offsetHeight * (currentZoom - 1)) / 2 + 100;
       currentPanX = Math.max(-maxPanX, Math.min(maxPanX, currentPanX));
       currentPanY = Math.max(-maxPanY, Math.min(maxPanY, currentPanY));
     }
@@ -1206,7 +1220,7 @@
         btn.innerHTML = `<div>Chap ${c + 1}</div>`;
         btn.onclick = () => {
           closeChapModal();
-          startReadingChapter(c, 1);
+          startReadingChapter(c, 0);
         };
         grid.appendChild(btn);
       });
@@ -1220,33 +1234,45 @@
 
     // LÙI TRANG: NẾU Ở ĐẦU CHAP -> TỰ ĐỘNG LÙI VỀ TRANG CUỐI CỦA CHAP TRƯỚC
     function prevPage() {
-      if (isRendering) return;
-
-      const step = isMobileView ? 1 : 2;
-      if (curPageNum - step >= 1) {
-        curPageNum -= step;
-        renderCurrentStagePages(currentSessionId);
-      } else {
-        // Tự động lùi về Chap trước
-        if (currentChapIndex > 0) {
-          startReadingChapter(currentChapIndex - 1, -1);
+      if (!pageFlipInstance || isFlipping) return;
+      if (document.getElementById("reader-view").style.display === "flex") {
+        const cur = pageFlipInstance.getCurrentPageIndex();
+        
+        if (cur <= 0) {
+          if (currentChapIndex > 0) {
+            startReadingChapter(currentChapIndex - 1, -1);
+          }
+          return;
         }
+
+        try {
+          isFlipping = true;
+          pageFlipInstance.flipPrev();
+          setTimeout(() => { isFlipping = false; }, 400);
+        } catch (e) { isFlipping = false; }
       }
     }
 
-    // SANG TRANG: NẾU Ở CUỐI CHAP -> TỰ ĐỘNG SANG TRANG 1 CỦA CHAP TIẾP THEO
+    // SANG TRANG: NẾU Ở CUỐI CHAP -> TỰ ĐỘNG SANG TRANG ĐẦU CỦA CHAP TIẾP THEO
     function nextPage() {
-      if (isRendering) return;
+      if (!pageFlipInstance || isFlipping) return;
+      if (document.getElementById("reader-view").style.display === "flex") {
+        const cur = pageFlipInstance.getCurrentPageIndex();
+        const isMobile = window.innerWidth < 768;
+        const isAtEnd = isMobile ? (cur >= currentNumPages - 1) : (cur >= currentNumPages - 2);
 
-      const step = isMobileView ? 1 : 2;
-      if (curPageNum + step <= currentNumPages) {
-        curPageNum += step;
-        renderCurrentStagePages(currentSessionId);
-      } else {
-        // Tự động sang Chap tiếp theo
-        if (currentChapIndex + 1 < bookChapters.length) {
-          startReadingChapter(currentChapIndex + 1, 1);
+        if (isAtEnd) {
+          if (currentChapIndex + 1 < bookChapters.length) {
+            startReadingChapter(currentChapIndex + 1, 0);
+          }
+          return;
         }
+
+        try {
+          isFlipping = true;
+          pageFlipInstance.flipNext();
+          setTimeout(() => { isFlipping = false; }, 400);
+        } catch (e) { isFlipping = false; }
       }
     }
 
@@ -1259,12 +1285,18 @@
 
     function backToDetail() {
       currentSessionId++;
+      isFlipping = false;
       resetZoom();
       document.getElementById("reader-view").style.display = "none";
       
-      const stage = document.getElementById("page-stage");
-      if (stage) stage.innerHTML = "";
-      currentPdfDoc = null;
+      const bookWrapper = document.getElementById("book-wrapper");
+      bookWrapper.innerHTML = "";
+
+      if (pageFlipInstance) {
+        try { pageFlipInstance.destroy(); } catch (e) {}
+        pageFlipInstance = null;
+      }
+      currentChapImages = [];
 
       if (selectedBook) {
         openBookDetail(selectedBook);
@@ -1275,14 +1307,20 @@
 
     function backToShelf() {
       currentSessionId++;
+      isFlipping = false;
       resetZoom();
       document.getElementById("reader-view").style.display = "none";
       document.getElementById("detail-view").style.display = "none";
       document.getElementById("shelf-view").style.display = "block";
 
-      const stage = document.getElementById("page-stage");
-      if (stage) stage.innerHTML = "";
-      currentPdfDoc = null;
+      const bookWrapper = document.getElementById("book-wrapper");
+      bookWrapper.innerHTML = "";
+
+      if (pageFlipInstance) {
+        try { pageFlipInstance.destroy(); } catch (e) {}
+        pageFlipInstance = null;
+      }
+      currentChapImages = [];
       selectedBook = null;
     }
 
