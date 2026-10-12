@@ -249,7 +249,7 @@
     }
     .chap-item.read:hover { background: #334155; color: #ffffff; }
 
-    /* GIAO DIỆN 3: TRÌNH ĐỌC LẬT SÁCH (CANVAS) */
+    /* GIAO DIỆN 3: TRÌNH ĐỌC LẬT SÁCH */
     #reader-view {
       display: none;
       flex-direction: column;
@@ -291,7 +291,7 @@
     .btn-accent { background: var(--accent-hover); }
     .btn-accent:hover { background: #0369a1; }
 
-    /* THANH TRƯỢT ZOOM CHUNG (HỖ TRỢ CẢ MOBILE & PC) */
+    /* THANH TRƯỢT ZOOM TIỆN DỤNG */
     .zoom-toolbar {
       display: flex;
       align-items: center;
@@ -329,7 +329,6 @@
     }
     .btn-icon:hover { background: #475569; }
 
-    /* THANH ĐIỀU HƯỚNG DƯỚI */
     .bottom-bar {
       width: 100%;
       max-width: 1200px;
@@ -356,13 +355,15 @@
       touch-action: pan-y;
     }
 
+    /* Khung Flipbook sắc nét */
     #flipbook {
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
       transform-origin: center center;
       transition: transform 0.05s linear;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: high-quality;
     }
 
-    /* Modal Chọn Chapter Nhanh */
     #chap-modal {
       display: none;
       position: fixed;
@@ -400,7 +401,6 @@
       gap: 0.6rem;
     }
 
-    /* Progress UI */
     .progress-box {
       width: 100%;
       max-width: 380px;
@@ -540,7 +540,7 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC LẬT SÁCH (CANVAS ENGINE) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC LẬT SÁCH (CANVAS HI-DPI ENGINE) -->
   <div id="reader-view">
     <div class="reader-toolbar">
       <button class="btn" onclick="backToDetail()">← Danh mục chap</button>
@@ -569,11 +569,10 @@
 
     <div id="book-wrapper"></div>
 
-    <!-- THANH ĐIỀU HƯỚNG DƯỚI TÍCH HỢP SLIDE ZOOM TIỆN DỤNG -->
+    <!-- THANH ĐIỀU HƯỚNG DƯỚI TÍCH HỢP SLIDE ZOOM -->
     <div class="bottom-bar">
       <button class="btn" onclick="prevPage()">‹ Trang trước</button>
       
-      <!-- THANH TRƯỢT ZOOM (SLIDE ZOOM) HOẠT ĐỘNG HOÀN HẢO CẢ MOBILE & PC -->
       <div class="zoom-toolbar">
         <button class="btn-icon" onclick="stepZoom(-0.2)" title="Thu nhỏ">−</button>
         <input type="range" id="zoom-slider" min="1" max="2.5" step="0.05" value="1" oninput="onZoomSlider(this.value)">
@@ -616,13 +615,10 @@
     let isDragging = false;
     let dragStartX = 0;
     let dragStartY = 0;
+    let baseScaleDpr = 1;
 
-    // HÀM LẤY ẢNH: KHÔNG GIỚI HẠN SIZE (=s0) ĐỂ ĐẠT CHẤT LƯỢNG NÉT GỐC 100%
-    function getDriveImageUrl(fileId, size = 0) {
-      if (!size || size === 0) {
-        // =s0: Trả về ảnh gốc nguyên bản, không bị nén hay giảm độ phân giải
-        return `https://lh3.googleusercontent.com/d/${fileId}=s0`;
-      }
+    // LẤY ẢNH QUA CDN CHẤT LƯỢNG CAO NHẤT (=w2400)
+    function getDriveImageUrl(fileId, size = 2400) {
       return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
     }
 
@@ -665,7 +661,7 @@
       });
     }
 
-    // 1. TẢI KỆ SÁCH (MỖI LẦN RELOAD LUÔN QUÉT DRIVE ĐỂ CẬP NHẬT TRUYỆN MỚI)
+    // 1. TẢI KỆ SÁCH (MỖI LẦN RELOAD LUÔN QUÉT DRIVE)
     async function fetchBookList() {
       document.getElementById("loading-shelf").style.display = "flex";
       setShelfProgress(35, "Đang đồng bộ từ Google Drive...");
@@ -734,7 +730,7 @@
 
       const coverImg = document.getElementById("detail-cover-img");
       if (book.thumbId) {
-        coverImg.src = getDriveImageUrl(book.thumbId, 0); // Ảnh bìa chất lượng gốc
+        coverImg.src = getDriveImageUrl(book.thumbId, 1200);
         coverImg.style.display = "block";
       } else {
         coverImg.style.display = "none";
@@ -752,7 +748,7 @@
         const data = await res.json();
         if (data.success && data.pages && data.pages.length > 0) {
           const trueFirstThumbId = data.pages[0].id;
-          const trueThumbUrl = getDriveImageUrl(trueFirstThumbId, 0);
+          const trueThumbUrl = getDriveImageUrl(trueFirstThumbId, 1200);
           
           const coverImg = document.getElementById("detail-cover-img");
           if (coverImg) {
@@ -792,7 +788,7 @@
       startReadingChapter(0);
     }
 
-    // 3. Mở đọc truyện với ảnh chất lượng cao
+    // 3. Mở đọc truyện với BỘ DỰNG CANVAS RETINA ĐỘ PHÂN GIẢI CAO (HI-DPI)
     async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook) return;
 
@@ -834,8 +830,8 @@
         const endGlobal = Math.min(totalAll, (chapIdx + 1) * PAGES_PER_CHAP);
         const chapSlice = allBookPages.slice(startGlobal, endGlobal);
 
-        // NẠP ẢNH CHẤT LƯỢNG GỐC (=s0) KHÔNG BỊ BÓP SIZE
-        currentChapImages = chapSlice.map(p => getDriveImageUrl(p.id, 0));
+        // Lấy link ảnh độ phân giải gốc cao nhất (=w2400)
+        currentChapImages = chapSlice.map(p => getDriveImageUrl(p.id, 2400));
         const chapTotal = currentChapImages.length;
 
         setBookProgress(70, "Đang mở trang sách...");
@@ -875,15 +871,22 @@
           singlePageH = Math.floor(spreadH);
         }
 
+        // --- NÂNG CẤP RETINA (HI-DPI): TĂNG ĐỘ NÉT CANVAS GẤP 2 LẦN ---
+        // Giúp Canvas khớp gần như 1:1 với kích thước 1338x1889 của file ảnh gốc
+        baseScaleDpr = Math.min(window.devicePixelRatio || 1, 2.0);
+        const renderPageW = Math.round(singlePageW * baseScaleDpr);
+        const renderPageH = Math.round(singlePageH * baseScaleDpr);
+
         const flipbookContainer = document.createElement("div");
         flipbookContainer.id = "flipbook";
         
+        // Cố định kích thước nội bộ độ nét cao cho Canvas
         if (isMobile) {
-          flipbookContainer.style.width = singlePageW + "px";
-          flipbookContainer.style.height = singlePageH + "px";
+          flipbookContainer.style.width = renderPageW + "px";
+          flipbookContainer.style.height = renderPageH + "px";
         } else {
-          flipbookContainer.style.width = (singlePageW * 2) + "px";
-          flipbookContainer.style.height = singlePageH + "px";
+          flipbookContainer.style.width = (renderPageW * 2) + "px";
+          flipbookContainer.style.height = renderPageH + "px";
         }
         bookWrapper.appendChild(flipbookContainer);
 
@@ -894,14 +897,15 @@
         if (sessionId !== currentSessionId) return;
         setBookProgress(100, "Sẵn sàng!");
 
+        // Khởi tạo Canvas Engine với độ phân giải cao
         pageFlipInstance = new St.PageFlip(flipbookContainer, {
-          width: singlePageW,
-          height: singlePageH,
+          width: renderPageW,
+          height: renderPageH,
           size: "fixed",
           minWidth: 150,
-          maxWidth: 2500,
+          maxWidth: 4000,
           minHeight: 150,
-          maxHeight: 2500,
+          maxHeight: 4000,
           maxShadowOpacity: 0.35,
           showCover: false,
           mobileScrollSupport: false,
@@ -912,6 +916,9 @@
         pageFlipInstance.loadFromImages(currentChapImages);
         updatePageUI(0, isMobile);
         markChapAsRead(selectedBook.id, chapIdx);
+
+        // Áp dụng tỷ lệ hiển thị vừa vặn màn hình với độ nét Retina
+        applyZoomTransform();
 
         pageFlipInstance.on("changeState", (e) => {
           if (e.data === "read") {
@@ -972,7 +979,7 @@
     }
 
     // ==============================================================
-    // CƠ CHẾ SLIDE ZOOM (THANH TRƯỢT) & KÉO ẢNH (KHÔNG NHẦM VỚI TOUCH)
+    // CƠ CHẾ SLIDE ZOOM (THANH TRƯỢT) VỚI ĐỘ NÉT RETINA TỐI ĐA
     // ==============================================================
     function applyZoomTransform() {
       const flipbook = document.getElementById("flipbook");
@@ -980,14 +987,17 @@
 
       clampPan();
 
+      // Kết hợp tỷ lệ thu nhỏ Hi-DPI và hệ số Zoom
+      const effectiveScale = (currentZoom / baseScaleDpr);
+
       if (currentZoom <= 1.02) {
         currentZoom = 1;
         currentPanX = 0;
         currentPanY = 0;
-        flipbook.style.transform = "";
+        flipbook.style.transform = `scale(${1 / baseScaleDpr})`;
         flipbook.style.cursor = "";
       } else {
-        flipbook.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
+        flipbook.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${effectiveScale})`;
         flipbook.style.cursor = isDragging ? "grabbing" : "grab";
       }
 
@@ -1005,13 +1015,16 @@
       }
       const flipbook = document.getElementById("flipbook");
       if (!flipbook) return;
-      const maxPanX = (flipbook.offsetWidth * (currentZoom - 1)) / 2 + 100;
-      const maxPanY = (flipbook.offsetHeight * (currentZoom - 1)) / 2 + 100;
+      
+      const visualW = (flipbook.offsetWidth / baseScaleDpr) * currentZoom;
+      const visualH = (flipbook.offsetHeight / baseScaleDpr) * currentZoom;
+      const maxPanX = Math.max(0, (visualW - (flipbook.offsetWidth / baseScaleDpr)) / 2 + 80);
+      const maxPanY = Math.max(0, (visualH - (flipbook.offsetHeight / baseScaleDpr)) / 2 + 80);
+      
       currentPanX = Math.max(-maxPanX, Math.min(maxPanX, currentPanX));
       currentPanY = Math.max(-maxPanY, Math.min(maxPanY, currentPanY));
     }
 
-    // Điều khiển bằng thanh kéo Slider
     function onZoomSlider(val) {
       currentZoom = parseFloat(val);
       applyZoomTransform();
@@ -1057,9 +1070,9 @@
       }
     });
 
-    // XỬ LÝ CẢM ỨNG TRÊN MOBILE:
-    // - Khi Zoom = 100%: 1 ngón chạm / vuốt là LẬT TRANG (Hoàn toàn không nhầm với Zoom)
-    // - Khi Zoom > 100%: 1 ngón tay dùng để KÉO TRANH (Pan) để đọc chữ chi tiết
+    // CẢM ỨNG MOBILE: 
+    // - Zoom = 100%: 1 ngón chạm / vuốt là LẬT TRANG (Không bị nhầm với Zoom)
+    // - Zoom > 100%: 1 ngón tay dùng để KÉO TRANH (Pan) soi chi tiết chữ
     let touchStartX = 0, touchStartY = 0, touchStartTime = 0, touchMoved = false;
 
     bookWrapper.addEventListener("touchstart", (e) => {
@@ -1098,7 +1111,6 @@
         return;
       }
 
-      // Xử lý lật trang khi ở tỉ lệ 100%
       if (e.changedTouches.length === 1 && touchStartTime > 0) {
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
@@ -1231,22 +1243,4 @@
       isFlipping = false;
       resetZoom();
       document.getElementById("reader-view").style.display = "none";
-      document.getElementById("detail-view").style.display = "none";
-      document.getElementById("shelf-view").style.display = "block";
-
-      const bookWrapper = document.getElementById("book-wrapper");
-      bookWrapper.innerHTML = "";
-
-      if (pageFlipInstance) {
-        try { pageFlipInstance.destroy(); } catch (e) {}
-        pageFlipInstance = null;
-      }
-      currentChapImages = [];
-      selectedBook = null;
-    }
-
-    // Tự động kiểm tra và làm mới từ Drive mỗi lần mở hoặc reload trang web
-    window.addEventListener("DOMContentLoaded", fetchBookList);
-  </script>
-</body>
-</html>
+      document.getElementById("detail-
