@@ -315,7 +315,7 @@
       font-weight: 600;
     }
     @media (max-width: 720px) {
-      .zoom-toolbar { display: none; } /* Mobile dùng cử chỉ 2 ngón tay */
+      .zoom-toolbar { display: none; }
     }
 
     #book-wrapper {
@@ -328,7 +328,7 @@
       min-height: 0;
       overflow: hidden;
       user-select: none;
-      touch-action: none; /* Khóa touch mặc định của trình duyệt để xử lý zoom mượt mà */
+      touch-action: none;
     }
 
     #flipbook {
@@ -375,7 +375,7 @@
       gap: 0.6rem;
     }
 
-    /* Progress Bar */
+    /* Progress UI */
     .progress-box {
       width: 100%;
       max-width: 380px;
@@ -458,16 +458,11 @@
     <div id="status-tag" style="font-size: 0.8rem; color: var(--text-muted);">Đang kết nối...</div>
   </header>
 
-  <!-- MÀN HÌNH 1: KỆ SÁCH (HOME) -->
+  <!-- MÀN HÌNH 1: KỆ SÁCH (HOME) - ĐÃ BỎ NÚT BẤM -->
   <main id="shelf-view">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-      <div style="display: flex; align-items: baseline; gap: 0.8rem;">
-        <h2>Danh mục truyện tranh</h2>
-        <span id="file-counter" style="color: var(--text-muted); font-size: 0.9rem;"></span>
-      </div>
-      <button class="btn btn-accent" onclick="syncDriveNow()" title="Làm mới nội dung trực tiếp từ Drive">
-        🔄 Đồng bộ Drive
-      </button>
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
+      <h2>Danh mục truyện tranh</h2>
+      <span id="file-counter" style="color: var(--text-muted); font-size: 0.9rem;"></span>
     </div>
 
     <div id="loading-shelf" style="display: flex; justify-content: center; padding: 3rem 1rem;">
@@ -586,7 +581,7 @@
     let currentChapIndex = 0;
     let isFlipping = false;
 
-    // Biến quản lý Zoom & Pan
+    // Quản lý Zoom & Pan
     let currentZoom = 1;
     let currentPanX = 0;
     let currentPanY = 0;
@@ -637,26 +632,14 @@
       });
     }
 
-    // 1. Tải kệ sách (Mỗi lần reload sẽ luôn quét Drive để cập nhật)
-    async function fetchBookList(isForced = true) {
-      const cacheKey = "cached_book_list_v4";
-      
-      // Hiển thị ngay dữ liệu cache cũ trước (để không bị trắng trang)
-      const cachedBooks = localStorage.getItem(cacheKey);
-      if (cachedBooks) {
-        try {
-          const books = JSON.parse(cachedBooks);
-          renderBookGrid(books);
-          document.getElementById("loading-shelf").style.display = "none";
-          document.getElementById("status-tag").innerText = "Đang kiểm tra cập nhật Drive...";
-        } catch(e) {}
-      } else {
-        document.getElementById("loading-shelf").style.display = "flex";
-        setShelfProgress(35, "Đang kết nối Google Drive...");
-      }
+    // 1. TẢI KỆ SÁCH (MỖI LẦN RELOAD SẼ LUÔN ĐỒNG BỘ MỚI TỪ DRIVE)
+    async function fetchBookList() {
+      document.getElementById("loading-shelf").style.display = "flex";
+      setShelfProgress(35, "Đang đồng bộ từ Google Drive...");
+      document.getElementById("status-tag").innerText = "Đang kiểm tra Drive...";
 
-      // Luôn gọi quét mới từ Drive
       try {
+        // Luôn gửi tham số refresh=1 & timestamp để vượt qua mọi tầng cache
         const fetchUrl = `${GOOGLE_SCRIPT_URL}?refresh=1&t=${Date.now()}`;
         const response = await fetch(fetchUrl);
         const res = await response.json();
@@ -664,25 +647,14 @@
         if (!res.success) throw new Error(res.error);
 
         const books = res.books || [];
-        localStorage.setItem(cacheKey, JSON.stringify(books));
-        
         renderBookGrid(books);
+        
         document.getElementById("loading-shelf").style.display = "none";
-        document.getElementById("status-tag").innerText = "Đã đồng bộ Drive mới nhất";
+        document.getElementById("status-tag").innerText = "Đã cập nhật mới nhất";
 
       } catch (err) {
-        if (!cachedBooks) {
-          document.getElementById("loading-shelf").innerHTML = `<div style="color:#ef4444; text-align:center;">Lỗi nạp danh mục: ${err.message}</div>`;
-        } else {
-          document.getElementById("status-tag").innerText = "Chế độ ngoại tuyến";
-        }
+        document.getElementById("loading-shelf").innerHTML = `<div style="color:#ef4444; text-align:center;">Lỗi nạp danh mục: ${err.message}</div>`;
       }
-    }
-
-    function syncDriveNow() {
-      localStorage.removeItem("cached_book_list_v4");
-      sessionStorage.clear();
-      fetchBookList(true);
     }
 
     function renderBookGrid(books) {
@@ -739,41 +711,29 @@
       renderDetailChapGrid(book.id, totalChaps, book.pageCount);
       window.scrollTo(0, 0);
 
+      // Nạp ngầm danh sách trang để gán ảnh bìa 0001 chuẩn và mở đọc ngay
       prefetchBookPages(book);
     }
 
     async function prefetchBookPages(book) {
-      const cacheKey = `comic_pages_v4_${book.id}`;
-      let pageData = null;
       try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) pageData = JSON.parse(cached);
-      } catch (e) {}
-
-      if (!pageData) {
-        try {
-          const res = await fetch(`${GOOGLE_SCRIPT_URL}?folderId=${book.id}&t=${Date.now()}`);
-          const data = await res.json();
-          if (data.success && data.pages && data.pages.length > 0) {
-            pageData = data.pages;
-            localStorage.setItem(cacheKey, JSON.stringify(pageData));
+        const res = await fetch(`${GOOGLE_SCRIPT_URL}?folderId=${book.id}&t=${Date.now()}`);
+        const data = await res.json();
+        if (data.success && data.pages && data.pages.length > 0) {
+          const trueFirstThumbId = data.pages[0].id;
+          const trueThumbUrl = getDriveImageUrl(trueFirstThumbId, 800);
+          
+          const coverImg = document.getElementById("detail-cover-img");
+          if (coverImg) {
+            coverImg.src = trueThumbUrl;
+            coverImg.style.display = "block";
           }
-        } catch (e) {}
-      }
-
-      if (pageData && pageData.length > 0) {
-        const trueFirstThumbId = pageData[0].id;
-        const trueThumbUrl = getDriveImageUrl(trueFirstThumbId, 800);
-        const coverImg = document.getElementById("detail-cover-img");
-        if (coverImg) {
-          coverImg.src = trueThumbUrl;
-          coverImg.style.display = "block";
+          const shelfImg = document.getElementById(`shelf-thumb-${book.id}`);
+          if (shelfImg) {
+            shelfImg.src = getDriveImageUrl(trueFirstThumbId, 600);
+          }
         }
-        const shelfImg = document.getElementById(`shelf-thumb-${book.id}`);
-        if (shelfImg) {
-          shelfImg.src = getDriveImageUrl(trueFirstThumbId, 600);
-        }
-      }
+      } catch (e) {}
     }
 
     function renderDetailChapGrid(bookId, totalChaps, totalPages) {
@@ -801,14 +761,14 @@
       startReadingChapter(0);
     }
 
-    // 3. Mở đọc truyện
+    // 3. Mở đọc đúng 20 trang của Chap được chọn
     async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook) return;
 
       const sessionId = ++currentSessionId;
       currentChapIndex = chapIdx;
       isFlipping = false;
-      resetZoom(); // Reset zoom khi mở chap
+      resetZoom();
 
       document.getElementById("detail-view").style.display = "none";
       document.getElementById("reader-view").style.display = "flex";
@@ -828,25 +788,14 @@
       setBookProgress(30, "Đang nạp cấu trúc trang tranh...");
 
       try {
-        const cacheKey = `comic_pages_v4_${selectedBook.id}`;
-        let pageData = null;
-        try {
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) pageData = JSON.parse(cached);
-        } catch (e) {}
-
-        if (!pageData) {
-          const response = await fetch(`${GOOGLE_SCRIPT_URL}?folderId=${selectedBook.id}&t=${Date.now()}`);
-          if (!response.ok) throw new Error("HTTP " + response.status);
-          const res = await response.json();
-          if (!res.success) throw new Error(res.error);
-          pageData = res.pages || [];
-          try { localStorage.setItem(cacheKey, JSON.stringify(pageData)); } catch (e) {}
-        }
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?folderId=${selectedBook.id}&t=${Date.now()}`);
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const res = await response.json();
+        if (!res.success) throw new Error(res.error);
 
         if (sessionId !== currentSessionId) return;
 
-        allBookPages = pageData;
+        allBookPages = res.pages || [];
         const totalAll = allBookPages.length;
         if (totalAll === 0) throw new Error("Thư mục truyện không có ảnh nào.");
 
@@ -943,7 +892,6 @@
         pageFlipInstance.on("flip", (e) => {
           const curIndex = e.data;
           updatePageUI(curIndex, isMobile);
-          resetZoom(); // Tự động reset zoom về 100% khi sang trang mới
         });
 
         setTimeout(() => {
@@ -1048,7 +996,7 @@
       applyZoomTransform();
     }
 
-    // 1. Zoom và Di chuyển bằng Chuột trên PC
+    // Zoom và Di chuyển bằng Chuột trên PC
     const bookWrapper = document.getElementById("book-wrapper");
 
     bookWrapper.addEventListener("mousedown", (e) => {
@@ -1076,7 +1024,7 @@
       }
     });
 
-    // 2. Zoom 2 ngón & Lật trang 1 ngón trên Mobile
+    // Zoom 2 ngón & Lật trang 1 ngón trên Mobile
     let touchStartX = 0, touchStartY = 0, touchStartTime = 0, touchMoved = false;
     let initialPinchDist = 0;
     let initialPinchZoom = 1;
@@ -1087,7 +1035,6 @@
 
     bookWrapper.addEventListener("touchstart", (e) => {
       if (e.touches.length === 2) {
-        // Bắt đầu Zoom 2 ngón
         isPinching = true;
         initialPinchDist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
@@ -1097,11 +1044,9 @@
       } else if (e.touches.length === 1) {
         isPinching = false;
         if (currentZoom > 1.05) {
-          // Khi đang phóng to: 1 ngón dùng để kéo di chuyển hình ảnh
           panTouchStartX = e.touches[0].clientX - currentPanX;
           panTouchStartY = e.touches[0].clientY - currentPanY;
         } else {
-          // Khi ở tỉ lệ 100%: 1 ngón dùng để lật trang
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
           touchStartTime = Date.now();
@@ -1112,7 +1057,6 @@
 
     bookWrapper.addEventListener("touchmove", (e) => {
       if (isPinching && e.touches.length === 2) {
-        // Thao tác Zoom 2 ngón
         const dist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
@@ -1122,7 +1066,6 @@
         e.preventDefault();
       } else if (e.touches.length === 1) {
         if (currentZoom > 1.05) {
-          // Kéo di chuyển ảnh khi đang zoom
           currentPanX = e.touches[0].clientX - panTouchStartX;
           currentPanY = e.touches[0].clientY - panTouchStartY;
           applyZoomTransform();
@@ -1142,7 +1085,6 @@
         return;
       }
 
-      // Xử lý cử chỉ 1 ngón khi không zoom
       if (currentZoom <= 1.05 && e.changedTouches.length === 1) {
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
@@ -1150,7 +1092,7 @@
         const diffY = touchEndY - touchStartY;
         const duration = Date.now() - touchStartTime;
 
-        // Nhấn đúp (Double-tap) để phóng to/thu nhỏ nhanh
+        // Double-tap phóng to/thu nhỏ nhanh
         const now = Date.now();
         if (now - lastTapTime < 300) {
           if (currentZoom <= 1.05) {
@@ -1304,8 +1246,8 @@
       selectedBook = null;
     }
 
-    // Tự động kiểm tra và làm mới từ Drive mỗi lần mở trang web
-    window.addEventListener("DOMContentLoaded", () => fetchBookList(true));
+    // Tự động kiểm tra và làm mới từ Drive mỗi lần mở hoặc reload trang web
+    window.addEventListener("DOMContentLoaded", fetchBookList);
   </script>
 </body>
 </html>
