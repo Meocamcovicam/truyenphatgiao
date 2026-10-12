@@ -249,7 +249,7 @@
     }
     .chap-item.read:hover { background: #334155; color: #ffffff; }
 
-    /* GIAO DIỆN 3: TRÌNH ĐỌC LẬT SÁCH */
+    /* GIAO DIỆN 3: TRÌNH ĐỌC LẬT SÁCH (CANVAS) */
     #reader-view {
       display: none;
       flex-direction: column;
@@ -291,7 +291,6 @@
     .btn-accent { background: var(--accent-hover); }
     .btn-accent:hover { background: #0369a1; }
 
-    /* Khung Canvas Flipbook */
     #book-wrapper {
       position: relative;
       display: flex;
@@ -348,7 +347,7 @@
       gap: 0.6rem;
     }
 
-    /* Progress UI */
+    /* Progress Bar */
     .progress-box {
       width: 100%;
       max-width: 380px;
@@ -441,7 +440,7 @@
     <div id="loading-shelf" style="display: flex; justify-content: center; padding: 3rem 1rem;">
       <div class="progress-box">
         <div class="progress-header">
-          <span id="shelf-prog-text">Đang kết nối Google Drive...</span>
+          <span id="shelf-prog-text">Đang đồng bộ Google Drive...</span>
           <span id="shelf-prog-pct" style="color: var(--accent);">0%</span>
         </div>
         <div class="progress-track">
@@ -498,14 +497,14 @@
       </button>
 
       <div style="font-size: 0.85rem;">
-        Trang <span id="current-page">1</span> / <span id="total-pages">--</span>
+        Trang <span id="current-page">1</span>
       </div>
     </div>
 
     <div id="loading-book-overlay">
       <div class="progress-box">
         <div class="progress-header">
-          <span id="book-prog-text">Đang nạp truyện tranh...</span>
+          <span id="book-prog-text">Đang chuẩn bị trang truyện...</span>
           <span id="book-prog-pct" style="color: var(--accent);">0%</span>
         </div>
         <div class="progress-track">
@@ -540,10 +539,13 @@
     let pageFlipInstance = null;
     let currentSessionId = 0;
     let selectedBook = null;
-    let currentImageUrls = [];
+    let allBookPages = [];
+    let currentChapImages = [];
+    let currentChapIndex = 0;
     let isFlipping = false;
 
-    function getDriveImageUrl(fileId, size = 1600) {
+    // Sử dụng size 1200 để tải nhanh gấp 3 lần mà hình ảnh vẫn rõ nét
+    function getDriveImageUrl(fileId, size = 1200) {
       return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
     }
 
@@ -586,16 +588,7 @@
       });
     }
 
-    function preloadChapterImages(chapIndex) {
-      const start = chapIndex * PAGES_PER_CHAP;
-      const end = Math.min(currentImageUrls.length, (chapIndex + 1) * PAGES_PER_CHAP + 4);
-      for (let i = start; i < end; i++) {
-        const img = new Image();
-        img.src = currentImageUrls[i];
-      }
-    }
-
-    // 1. Tải kệ sách
+    // 1. Tải kệ sách (Ưu tiên hiển thị ngay từ localStorage)
     async function fetchBookList() {
       const cachedBooks = localStorage.getItem("cached_book_list");
       if (cachedBooks) {
@@ -603,11 +596,11 @@
           const books = JSON.parse(cachedBooks);
           renderBookGrid(books);
           document.getElementById("loading-shelf").style.display = "none";
-          document.getElementById("status-tag").innerText = "Đã đồng bộ Cache";
+          document.getElementById("status-tag").innerText = "Sẵn sàng (Đã lưu cache)";
         } catch(e) {}
+      } else {
+        setShelfProgress(35, "Đang kết nối Google Drive...");
       }
-
-      setShelfProgress(40, "Đang đồng bộ Google Drive...");
 
       try {
         const response = await fetch(GOOGLE_SCRIPT_URL);
@@ -615,15 +608,11 @@
 
         if (!res.success) throw new Error(res.error);
 
-        setShelfProgress(100, "Thành công!");
-        setTimeout(() => {
-          document.getElementById("loading-shelf").style.display = "none";
-        }, 200);
-
         const books = res.books || [];
         localStorage.setItem("cached_book_list", JSON.stringify(books));
         
         renderBookGrid(books);
+        document.getElementById("loading-shelf").style.display = "none";
         document.getElementById("status-tag").innerText = "Đã đồng bộ Drive";
 
       } catch (err) {
@@ -703,25 +692,27 @@
           <div>Chap ${c + 1}</div>
           <div style="font-size: 0.72rem; opacity: 0.85; margin-top:3px; font-weight:400;">(Trang ${startP}-${endP})</div>
         `;
-        btn.onclick = () => startReadingBook(c);
+        btn.onclick = () => startReadingChapter(c);
         grid.appendChild(btn);
       }
     }
 
     function readFromBeginning() {
-      startReadingBook(0);
+      startReadingChapter(0);
     }
 
-    // 3. Mở đọc truyện: Dựng Canvas Engine chuẩn xác 100%
-    async function startReadingBook(startChapIndex = 0) {
+    // 3. Mở đọc đúng 20 trang của Chap được chọn (Tốc độ mở siêu nhanh)
+    async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook) return;
 
       const sessionId = ++currentSessionId;
+      currentChapIndex = chapIdx;
       isFlipping = false;
 
       document.getElementById("detail-view").style.display = "none";
       document.getElementById("reader-view").style.display = "flex";
       document.getElementById("current-book-name").innerText = selectedBook.name;
+      document.getElementById("current-chap-label").innerText = `Chap ${chapIdx + 1}`;
 
       const overlay = document.getElementById("loading-book-overlay");
       overlay.style.display = "flex";
@@ -733,20 +724,14 @@
         pageFlipInstance = null;
       }
 
-      let loadPct = 25;
-      setBookProgress(loadPct, "Đang nạp cấu trúc trang tranh...");
-      const ticker = setInterval(() => {
-        if (loadPct < 75) {
-          loadPct += 10;
-          setBookProgress(loadPct, "Đang chuẩn bị trang truyện...");
-        }
-      }, 100);
+      setBookProgress(30, "Đang nạp cấu trúc trang tranh...");
 
       try {
+        // Kiểm tra bộ nhớ đệm trang trong localStorage
         const cacheKey = `comic_pages_${selectedBook.id}`;
         let pageData = null;
         try {
-          const cached = sessionStorage.getItem(cacheKey);
+          const cached = localStorage.getItem(cacheKey);
           if (cached) pageData = JSON.parse(cached);
         } catch (e) {}
 
@@ -756,20 +741,26 @@
           const res = await response.json();
           if (!res.success) throw new Error(res.error);
           pageData = res.pages || [];
-          try { sessionStorage.setItem(cacheKey, JSON.stringify(pageData)); } catch (e) {}
+          try { localStorage.setItem(cacheKey, JSON.stringify(pageData)); } catch (e) {}
         }
 
-        clearInterval(ticker);
         if (sessionId !== currentSessionId) return;
 
-        currentImageUrls = pageData.map(p => getDriveImageUrl(p.id, 1600));
-        const total = currentImageUrls.length;
-        document.getElementById("total-pages").innerText = total;
-        if (total === 0) throw new Error("Thư mục truyện không có ảnh nào.");
+        allBookPages = pageData;
+        const totalAll = allBookPages.length;
+        if (totalAll === 0) throw new Error("Thư mục truyện không có ảnh nào.");
 
-        setBookProgress(80, "Khởi tạo khung lật...");
+        // CHỈ LẤY ĐÚNG 20 TRANG CỦA CHAPTER ĐƯỢC CHỌN
+        const startGlobal = chapIdx * PAGES_PER_CHAP;
+        const endGlobal = Math.min(totalAll, (chapIdx + 1) * PAGES_PER_CHAP);
+        const chapSlice = allBookPages.slice(startGlobal, endGlobal);
 
-        // Lấy tỷ lệ ảnh bìa sẵn có
+        currentChapImages = chapSlice.map(p => getDriveImageUrl(p.id, 1200));
+        const chapTotal = currentChapImages.length;
+
+        setBookProgress(70, "Đang mở trang sách...");
+
+        // Lấy tỷ lệ ảnh bìa đã tải sẵn
         let pageRatio = 0.707;
         const thumbImg = document.getElementById("detail-cover-img");
         if (thumbImg && thumbImg.naturalWidth && thumbImg.naturalHeight) {
@@ -817,23 +808,15 @@
         }
         bookWrapper.appendChild(flipbookContainer);
 
-        // ĐIỀU CHỈNH TRANG BẮT ĐẦU:
-        // Đặt targetStartPage tương ứng với Chap được chọn
-        const targetStartPage = Math.min(total - 1, startChapIndex * PAGES_PER_CHAP);
-        setBookProgress(90, `Đang mở Chap ${startChapIndex + 1}...`);
-
-        // Tải trước 4 trang tại vị trí mở để nạp ngay vào Canvas
-        const preloads = [preloadSingleImage(currentImageUrls[targetStartPage])];
-        if (targetStartPage + 1 < total) preloads.push(preloadSingleImage(currentImageUrls[targetStartPage + 1]));
-        if (targetStartPage + 2 < total) preloads.push(preloadSingleImage(currentImageUrls[targetStartPage + 2]));
-        if (targetStartPage + 3 < total) preloads.push(preloadSingleImage(currentImageUrls[targetStartPage + 3]));
-        await Promise.all(preloads);
+        // CHỈ TẢI TRƯỚC 2 TRANG ĐẦU TIÊN CỦA CHAP (MỞ GẦN NHƯ TỨC THÌ)
+        const initialLoads = [preloadSingleImage(currentChapImages[0])];
+        if (chapTotal > 1) initialLoads.push(preloadSingleImage(currentChapImages[1]));
+        await Promise.all(initialLoads);
 
         if (sessionId !== currentSessionId) return;
         setBookProgress(100, "Sẵn sàng!");
 
-        // Khởi tạo Canvas Engine:
-        // showCover: false trên PC giúp các Chapter chẵn 20 trang mở sạch sẽ ở trang bên trái!
+        // Khởi tạo Canvas Engine
         pageFlipInstance = new St.PageFlip(flipbookContainer, {
           width: singlePageW,
           height: singlePageH,
@@ -843,17 +826,16 @@
           minHeight: 150,
           maxHeight: 2500,
           maxShadowOpacity: 0.35,
-          showCover: false, // TẮT BÌA LẺ: Triệt tiêu hoàn toàn lỗi dính trang của Chap trước
+          showCover: false, // Bắt đầu ngay từ trang 1 của Chap, không dính trang trước
           mobileScrollSupport: false,
           usePortrait: isMobile,
-          startPage: targetStartPage
+          startPage: 0
         });
 
-        // NẠP TRỰC TIẾP QUA CANVAS: Vẽ frame-by-frame, sửa triệt để lỗi trang bên phải bị trễ
-        pageFlipInstance.loadFromImages(currentImageUrls);
-        updatePageUI(targetStartPage, total, isMobile);
-
-        preloadChapterImages(startChapIndex);
+        // Nạp Canvas Engine trực tiếp
+        pageFlipInstance.loadFromImages(currentChapImages);
+        updatePageUI(0, isMobile);
+        markChapAsRead(selectedBook.id, chapIdx);
 
         pageFlipInstance.on("changeState", (e) => {
           if (e.data === "read") {
@@ -865,19 +847,26 @@
 
         pageFlipInstance.on("flip", (e) => {
           const curIndex = e.data;
-          updatePageUI(curIndex, total, isMobile);
-          const chap = Math.floor(curIndex / PAGES_PER_CHAP);
-          preloadChapterImages(chap);
+          updatePageUI(curIndex, isMobile);
         });
 
         setTimeout(() => {
           if (sessionId === currentSessionId) {
             overlay.style.display = "none";
           }
-        }, 150);
+        }, 120);
+
+        // Tải ngầm các trang còn lại trong Chap
+        (async () => {
+          for (let i = 2; i < chapTotal; i++) {
+            if (sessionId !== currentSessionId) break;
+            const img = new Image();
+            img.src = currentChapImages[i];
+            await new Promise(r => setTimeout(r, 150));
+          }
+        })();
 
       } catch (err) {
-        clearInterval(ticker);
         if (sessionId === currentSessionId) {
           alert("Lỗi tải truyện: " + err.message);
           backToDetail();
@@ -885,45 +874,41 @@
       }
     }
 
-    function updatePageUI(curIndex, total, isMobile) {
+    function updatePageUI(curIndex, isMobile) {
       const pageSpan = document.getElementById("current-page");
-      const chapLabel = document.getElementById("current-chap-label");
-
-      const chapIndex = Math.floor(curIndex / PAGES_PER_CHAP);
-      if (selectedBook) {
-        markChapAsRead(selectedBook.id, chapIndex);
-      }
-      if (chapLabel) {
-        chapLabel.innerText = `Chap ${chapIndex + 1}`;
-      }
+      const globalStart = currentChapIndex * PAGES_PER_CHAP;
+      const totalAll = allBookPages.length;
 
       if (isMobile) {
-        pageSpan.innerText = curIndex + 1;
+        const globalPage = globalStart + curIndex + 1;
+        pageSpan.innerText = `${curIndex + 1}/${currentChapImages.length} (Trang gốc: ${globalPage}/${totalAll})`;
       } else {
         const leftP = curIndex + 1;
         const rightP = curIndex + 2;
-        if (rightP <= total) {
-          pageSpan.innerText = `${leftP} - ${rightP}`;
+        const globalLeft = globalStart + leftP;
+        const globalRight = globalStart + rightP;
+
+        if (rightP <= currentChapImages.length) {
+          pageSpan.innerText = `${leftP}-${rightP}/${currentChapImages.length} (Trang gốc: ${globalLeft}-${globalRight}/${totalAll})`;
         } else {
-          pageSpan.innerText = `${leftP}`;
+          pageSpan.innerText = `${leftP}/${currentChapImages.length} (Trang gốc: ${globalLeft}/${totalAll})`;
         }
       }
     }
 
     function openChapModal() {
-      if (!currentImageUrls.length) return;
-      const totalChaps = Math.ceil(currentImageUrls.length / PAGES_PER_CHAP);
+      if (!allBookPages.length) return;
+      const totalChaps = Math.ceil(allBookPages.length / PAGES_PER_CHAP);
       const readList = getReadChapters(selectedBook.id);
-      const curChapIndex = pageFlipInstance ? Math.floor(pageFlipInstance.getCurrentPageIndex() / PAGES_PER_CHAP) : 0;
 
       const grid = document.getElementById("modal-chap-grid");
       grid.innerHTML = "";
 
       for (let c = 0; c < totalChaps; c++) {
         const startP = c * PAGES_PER_CHAP + 1;
-        const endP = Math.min(currentImageUrls.length, (c + 1) * PAGES_PER_CHAP);
+        const endP = Math.min(allBookPages.length, (c + 1) * PAGES_PER_CHAP);
         const isRead = readList.includes(c);
-        const isActive = (c === curChapIndex);
+        const isActive = (c === currentChapIndex);
 
         const btn = document.createElement("div");
         btn.className = `chap-item ${isRead ? 'read' : 'unread'} ${isActive ? 'active' : ''}`;
@@ -933,7 +918,7 @@
         `;
         btn.onclick = () => {
           closeChapModal();
-          jumpToChapter(c);
+          startReadingChapter(c);
         };
         grid.appendChild(btn);
       }
@@ -943,16 +928,6 @@
 
     function closeChapModal() {
       document.getElementById("chap-modal").style.display = "none";
-    }
-
-    function jumpToChapter(chapIndex) {
-      if (!pageFlipInstance) return;
-      const targetPageIndex = chapIndex * PAGES_PER_CHAP;
-      preloadChapterImages(chapIndex);
-      
-      // Chuyển trang Canvas
-      pageFlipInstance.turnToPage(targetPageIndex);
-      updatePageUI(targetPageIndex, currentImageUrls.length, window.innerWidth < 768);
     }
 
     function prevPage() {
@@ -970,6 +945,21 @@
       if (!pageFlipInstance || isFlipping) return;
       if (document.getElementById("reader-view").style.display === "flex") {
         try {
+          // Nếu đã lật đến cuối Chap hiện tại, tự động gợi ý sang Chap tiếp theo
+          const cur = pageFlipInstance.getCurrentPageIndex();
+          const isMobile = window.innerWidth < 768;
+          const isAtEnd = isMobile ? (cur >= currentChapImages.length - 1) : (cur >= currentChapImages.length - 2);
+
+          if (isAtEnd) {
+            const totalChaps = Math.ceil(allBookPages.length / PAGES_PER_CHAP);
+            if (currentChapIndex + 1 < totalChaps) {
+              if (confirm(`Bạn đã đọc hết Chap ${currentChapIndex + 1}. Chuyển sang Chap ${currentChapIndex + 2}?`)) {
+                startReadingChapter(currentChapIndex + 1);
+              }
+              return;
+            }
+          }
+
           isFlipping = true;
           pageFlipInstance.flipNext();
           setTimeout(() => { isFlipping = false; }, 400);
@@ -1040,7 +1030,7 @@
         try { pageFlipInstance.destroy(); } catch (e) {}
         pageFlipInstance = null;
       }
-      currentImageUrls = [];
+      currentChapImages = [];
 
       if (selectedBook) {
         openBookDetail(selectedBook);
@@ -1063,7 +1053,7 @@
         try { pageFlipInstance.destroy(); } catch (e) {}
         pageFlipInstance = null;
       }
-      currentImageUrls = [];
+      currentChapImages = [];
       selectedBook = null;
     }
 
