@@ -2,8 +2,9 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>Truyện Tranh Phật Thuyết A Di Đà Kinh - Đọc Trực Tuyến Bản Sắc Nét</title>
+  <!-- KHÓA ZOOM VIEWPORT TOÀN TRANG ĐỂ THANH MENU LUÔN GHIM CỐ ĐỊNH, KHÔNG BỊ TRƯỢT/PHÓNG TO -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Truyện Tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Gốc Siêu Nét</title>
   
   <!-- PDF.js Engine dành cho Mobile -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -28,6 +29,7 @@
       width: 100%;
       height: 100%;
       overflow-x: hidden;
+      overscroll-behavior: none;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -93,6 +95,7 @@
       gap: 0.4rem;
       white-space: nowrap;
       text-decoration: none;
+      user-select: none;
     }
     .btn:hover {
       background: #2b3950;
@@ -379,7 +382,10 @@
     #reader-view {
       display: none;
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100vw;
       height: 100vh;
       height: 100dvh;
@@ -387,11 +393,15 @@
       z-index: 100;
       flex-direction: column;
       overflow: hidden;
+      overscroll-behavior: none;
     }
 
-    /* THANH CÔNG CỤ ĐIỀU HƯỚNG GỌN GÀNG */
+    /* THANH CÔNG CỤ CỐ ĐỊNH 100% Ở ĐẦU TRANG - KHÔNG BAO GIỜ BỊ ZOOM HAY TRƯỢT */
     .reader-toolbar {
-      position: relative;
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
       flex-shrink: 0;
       width: 100%;
       height: 52px;
@@ -403,7 +413,9 @@
       padding: 0 0.8rem;
       gap: 0.5rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-      z-index: 110;
+      z-index: 200;
+      user-select: none;
+      touch-action: none; /* Ngăn chặn cử chỉ zoom trực tiếp lên thanh menu */
     }
 
     .toolbar-left, .toolbar-center, .toolbar-right {
@@ -433,8 +445,9 @@
       display: inline-block;
     }
 
-    /* 1. KHUNG CHỨA TRÌNH ĐỌC NATIVE CHO PC (ĐÃ TẮT LỀ TRÁI, 100% SIZE) */
+    /* 1. KHUNG CHỨA TRÌNH ĐỌC CHO PC (IFRAME NATIVE) */
     #native-viewer-container {
+      flex: 1;
       width: 100%;
       height: calc(100vh - 52px);
       height: calc(100dvh - 52px);
@@ -451,8 +464,9 @@
       background: #1a1e24;
     }
 
-    /* 2. KHUNG CHỨA TRÌNH ĐỌC TRỰC TIẾP CHO MOBILE (INLINE ENGINE) */
+    /* 2. KHUNG CHỨA TRÌNH ĐỌC TRỰC TIẾP CHO MOBILE */
     #mobile-viewer-container {
+      flex: 1;
       width: 100%;
       height: calc(100vh - 52px);
       height: calc(100dvh - 52px);
@@ -461,10 +475,12 @@
       display: none;
       flex-direction: column;
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       padding: 0.6rem 0 3.5rem 0;
+      touch-action: pan-x pan-y; /* Cho phép cuộn mượt tự nhiên */
     }
+
     .mobile-pages-wrapper {
       width: 100%;
       max-width: 820px;
@@ -474,7 +490,10 @@
       align-items: center;
       gap: 6px;
       padding: 0 4px;
+      transform-origin: top center;
+      transition: width 0.08s ease-out, max-width 0.08s ease-out;
     }
+
     .mobile-page-box {
       width: 100%;
       background: #0d1422;
@@ -519,7 +538,7 @@
       inset: 0;
       background: rgba(5, 8, 15, 0.88);
       backdrop-filter: blur(8px);
-      z-index: 150;
+      z-index: 250;
       align-items: center;
       justify-content: center;
       padding: 1rem;
@@ -561,7 +580,7 @@
       inset: 0;
       background: rgba(5, 8, 15, 0.92);
       backdrop-filter: blur(8px);
-      z-index: 120;
+      z-index: 150;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -688,7 +707,7 @@
 
   <!-- MÀN HÌNH 3: TRÌNH ĐỌC PDF TRỰC TIẾP (READER VIEW) -->
   <div id="reader-view">
-    <!-- THANH ĐIỀU HƯỚNG CỐ ĐỊNH -->
+    <!-- THANH ĐIỀU HƯỚNG CỐ ĐỊNH HOÀN TOÀN TRÊN ĐẦU TRANG -->
     <div class="reader-toolbar">
       <div class="toolbar-left">
         <button class="btn" onclick="backToShelf()" title="Về trang chủ kệ sách">🏠 Kệ sách</button>
@@ -719,7 +738,7 @@
       <iframe id="native-viewer-frame" src="" allowfullscreen></iframe>
     </div>
 
-    <!-- 2. BẢN CHO MOBILE: ENGINE TRỰC TIẾP TRÊN TRANG (KHÔNG CÒN NÚT "MỞ", KHÔNG BỊ NHẢY APP) -->
+    <!-- 2. BẢN CHO MOBILE: ENGINE ĐỌC TRỰC TIẾP (HỖ TRỢ 2 NGÓN TAY ZOOM RIÊNG NỘI DUNG TRANH) -->
     <div id="mobile-viewer-container">
       <div id="mobile-loading-overlay">
         <div class="spinner"></div>
@@ -827,6 +846,14 @@
     let mobileScrollTracker = null;
     let currentPdfDocMobile = null;
     let currentSessionId = 0;
+    let mobileTotalPages = 20;
+
+    // QUẢN LÝ ZOOM NỘI BỘ DÀNH CHO MOBILE
+    let currentMobileScale = 1.0;
+    let pinchStartDistance = 0;
+    let pinchStartScale = 1.0;
+    let lastTapTime = 0;
+    let reRenderDebounceTimer = null;
 
     // Cấu hình PDF.js
     if (window.pdfjsLib) {
@@ -959,13 +986,16 @@
     /* ==========================================================
        3. BẮT ĐẦU ĐỌC TRUYỆN: TỰ ĐỘNG KHỚP PC VÀ MOBILE
        - Trên PC: Mở iframe native PDFium 100% nét gốc không lề trái
-       - Trên Mobile: Mở trực tiếp trong trang, không có nút "Mở", không nhảy tab
+       - Trên Mobile: Mở trực tiếp trong trang, thanh menu ghim cố định 100%
        ========================================================== */
     function startReadingChapter(chapIdx = 0) {
       if (!COMIC_DATA.chapters[chapIdx]) return;
       currentChapIndex = chapIdx;
       const chap = COMIC_DATA.chapters[chapIdx];
       const encodedUrl = encodeURI(chap.file);
+
+      // Reset zoom
+      resetMobileZoom();
 
       // Khóa cuộn trang nền body
       document.documentElement.style.overflow = "hidden";
@@ -975,14 +1005,13 @@
       document.getElementById("reader-view").style.display = "flex";
       document.getElementById("current-chap-label").innerText = chap.title;
 
-      // Nút mở tab mới độc lập
       const directBtn = document.getElementById("btn-open-direct");
       directBtn.href = encodedUrl;
 
       const isMobile = isMobileDevice();
 
       if (!isMobile) {
-        // TRÊN PC (CỐC CỐC / CHROME / EDGE): SỬ DỤNG IFRAME GỐC ĐÃ ĐƯỢC BẠN ƯNG Ý
+        // TRÊN PC: DÙNG IFRAME GỐC CHUẨN IN ẤN
         document.getElementById("native-viewer-container").style.display = "flex";
         document.getElementById("mobile-viewer-container").style.display = "none";
         document.getElementById("reader-status-text").innerText = "Bản PDF Gốc (100% Size)";
@@ -990,9 +1019,7 @@
         const nativeFrame = document.getElementById("native-viewer-frame");
         nativeFrame.src = `${encodedUrl}#navpanes=0&pagemode=none&zoom=100`;
       } else {
-        // TRÊN MOBILE (ANDROID CHROME / CỐC CỐC MOBILE / SAFARI):
-        // KHÔNG DÙNG IFRAME (ĐỂ KHÔNG BỊ NÚT "MỞ" VÀ NHẢY TRANG)
-        // MỞ TRỰC TIẾP TỪNG TRANG NGAY TRONG GIAO DIỆN NÀY
+        // TRÊN MOBILE: DÙNG BỘ RENDER NỘI BỘ, GIỮ THANH MENU BẤT ĐỘNG
         document.getElementById("native-viewer-container").style.display = "none";
         document.getElementById("mobile-viewer-container").style.display = "flex";
 
@@ -1014,6 +1041,7 @@
       overlay.classList.remove("hide");
       wrapper.innerHTML = "";
       scrollBox.scrollTop = 0;
+      scrollBox.scrollLeft = 0;
       document.getElementById("end-chap-nav").style.display = "none";
 
       if (mobileObserver) mobileObserver.disconnect();
@@ -1030,14 +1058,13 @@
         currentPdfDocMobile = await loadingTask.promise;
         if (sessionId !== currentSessionId) return;
 
-        const totalPages = currentPdfDocMobile.numPages;
-        document.getElementById("reader-status-text").innerText = `Trang 1 / ${totalPages}`;
+        mobileTotalPages = currentPdfDocMobile.numPages;
+        updateMobileStatusBadge(1);
 
-        // Lấy tỷ lệ khung hình chuẩn từ trang đầu tiên
         const page1 = await currentPdfDocMobile.getPage(1);
         const vp1 = page1.getViewport({ scale: 1.0 });
 
-        for (let p = 1; p <= totalPages; p++) {
+        for (let p = 1; p <= mobileTotalPages; p++) {
           const pageBox = document.createElement("div");
           pageBox.className = "mobile-page-box";
           pageBox.dataset.page = p;
@@ -1047,7 +1074,6 @@
           wrapper.appendChild(pageBox);
         }
 
-        // Tự động render trang khi cuộn đến gần
         mobileObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             const el = entry.target;
@@ -1063,11 +1089,10 @@
           rootMargin: "600px 0px"
         });
 
-        // Theo dõi số trang hiện tại khi người dùng cuộn
         mobileScrollTracker = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
-              document.getElementById("reader-status-text").innerText = `Trang ${entry.target.dataset.page} / ${totalPages}`;
+              updateMobileStatusBadge(parseInt(entry.target.dataset.page));
             }
           });
         }, {
@@ -1081,13 +1106,11 @@
           mobileScrollTracker.observe(b);
         });
 
-        // Ưu tiên dựng ngay trang 1
         if (allBoxes[0]) {
           allBoxes[0].dataset.rendered = "true";
           await renderSingleMobilePage(1, allBoxes[0]);
         }
 
-        // Cập nhật nút điều hướng cuối tập
         const btnPrev = document.getElementById("btn-prev-chap");
         const btnNext = document.getElementById("btn-next-chap");
         btnPrev.style.display = (chapIdx > 0) ? "inline-flex" : "none";
@@ -1106,19 +1129,23 @@
       }
     }
 
+    function updateMobileStatusBadge(pageNum = 1) {
+      const zoomText = currentMobileScale > 1.05 ? ` (${Math.round(currentMobileScale * 100)}%)` : '';
+      document.getElementById("reader-status-text").innerText = `Trang ${pageNum} / ${mobileTotalPages}${zoomText}`;
+    }
+
     async function renderSingleMobilePage(pageNum, container) {
       if (!currentPdfDocMobile) return;
       try {
         const page = await currentPdfDocMobile.getPage(pageNum);
         const baseVp = page.getViewport({ scale: 1.0 });
 
-        // Khớp 1:1 bề ngang màn hình điện thoại
         const clientWidth = container.clientWidth || window.innerWidth;
         const displayScale = clientWidth / baseVp.width;
         const viewport = page.getViewport({ scale: displayScale });
 
-        // Mật độ điểm ảnh phần cứng của màn hình OLED điện thoại (thường là 2.5 - 3.0)
-        const dpr = Math.min(Math.max(window.devicePixelRatio || 2, 2.0), 3.0);
+        // Tối ưu độ phân giải sắc nét tương ứng với độ phóng to
+        const dpr = Math.min(Math.max((window.devicePixelRatio || 2) * currentMobileScale, 2.0), 3.5);
 
         const canvas = document.createElement("canvas");
         canvas.width = Math.floor(viewport.width * dpr);
@@ -1148,8 +1175,95 @@
       }
     }
 
+    /* ==========================================================
+       HỆ THỐNG ZOOM 2 NGÓN TAY RIÊNG CHO NỘI DUNG TRANH
+       (THANH CÔNG CỤ HOÀN TOÀN BẤT ĐỘNG, GHIM 100% TRÊN ĐẦU)
+       ========================================================== */
+    const mobileScrollContainer = document.getElementById("mobile-viewer-container");
+    const mobilePagesWrapper = document.getElementById("mobile-pages-wrapper");
+
+    function applyMobileZoom(newScale) {
+      currentMobileScale = Math.max(1.0, Math.min(2.8, newScale));
+      
+      if (currentMobileScale <= 1.02) {
+        currentMobileScale = 1.0;
+        mobilePagesWrapper.style.width = '100%';
+        mobilePagesWrapper.style.maxWidth = '820px';
+      } else {
+        const pct = Math.round(currentMobileScale * 100);
+        mobilePagesWrapper.style.width = pct + '%';
+        mobilePagesWrapper.style.maxWidth = pct + '%';
+      }
+
+      // Cập nhật số trang & phần trăm zoom
+      const currentPageNum = document.getElementById("reader-status-text").innerText.match(/Trang (\d+)/);
+      updateMobileStatusBadge(currentPageNum ? parseInt(currentPageNum[1]) : 1);
+    }
+
+    function resetMobileZoom() {
+      applyMobileZoom(1.0);
+    }
+
+    // XỬ LÝ CỬ CHỈ PINCH BẰNG 2 NGÓN TAY TRÊN VÙNG TRANH
+    mobileScrollContainer.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        pinchStartDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        pinchStartScale = currentMobileScale;
+      } else if (e.touches.length === 1) {
+        // Nhấn đúp (Double tap) để phóng to 1.8x hoặc trở về 100%
+        const now = Date.now();
+        if (now - lastTapTime < 280) {
+          e.preventDefault();
+          if (currentMobileScale > 1.1) {
+            resetMobileZoom();
+          } else {
+            applyMobileZoom(1.8);
+          }
+          scheduleVisiblePagesReRender();
+        }
+        lastTapTime = now;
+      }
+    }, { passive: false });
+
+    mobileScrollContainer.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2 && pinchStartDistance > 0) {
+        e.preventDefault(); // Ngăn chặn hoàn toàn cử chỉ zoom trình duyệt lên thanh menu
+        const currentDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = currentDistance / pinchStartDistance;
+        applyMobileZoom(pinchStartScale * factor);
+      }
+    }, { passive: false });
+
+    mobileScrollContainer.addEventListener("touchend", (e) => {
+      if (e.touches.length < 2 && pinchStartDistance > 0) {
+        pinchStartDistance = 0;
+        scheduleVisiblePagesReRender();
+      }
+    }, { passive: true });
+
+    function scheduleVisiblePagesReRender() {
+      clearTimeout(reRenderDebounceTimer);
+      reRenderDebounceTimer = setTimeout(() => {
+        const boxes = mobilePagesWrapper.querySelectorAll(".mobile-page-box");
+        const scrollRect = mobileScrollContainer.getBoundingClientRect();
+        boxes.forEach(box => {
+          const rect = box.getBoundingClientRect();
+          const isVisible = (rect.bottom >= scrollRect.top - 200 && rect.top <= scrollRect.bottom + 200);
+          if (isVisible) {
+            renderSingleMobilePage(parseInt(box.dataset.page), box);
+          }
+        });
+      }, 250);
+    }
+
     function scrollToTopMobile() {
-      document.getElementById("mobile-viewer-container").scrollTo({ top: 0, behavior: "smooth" });
+      mobileScrollContainer.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     /* ==========================================================
