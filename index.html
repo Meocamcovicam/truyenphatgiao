@@ -71,16 +71,9 @@
       margin-top: 1.2rem;
     }
     
-    /* HIỆU ỨNG XUẤT HIỆN TỪNG TRUYỆN MỘT (STAGGERED) */
     @keyframes cardFadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(14px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .book-card-animated {
       opacity: 0;
@@ -142,7 +135,7 @@
       margin-top: auto;
     }
 
-    /* KHUNG XƯƠNG GIỮ CHỖ (SKELETON CARDS) */
+    /* SKELETON CARDS */
     @keyframes skeletonPulse {
       0%, 100% { opacity: 0.55; }
       50% { opacity: 0.25; }
@@ -378,7 +371,7 @@
     }
     .btn-icon:hover { background: #475569; }
 
-    /* VÙNG CUỘN ĐỌC DỌC & CẢM ỨNG PINCH-TO-ZOOM */
+    /* VÙNG CUỘN ĐỌC DỌC & PINCH-TO-ZOOM */
     #reader-scroll-container {
       flex: 1;
       overflow-y: auto;
@@ -475,51 +468,109 @@
       gap: 0.6rem;
     }
 
-    /* PROGRESS BOX */
-    .progress-box {
-      width: 100%;
-      max-width: 380px;
-      background: #1e293b;
-      padding: 1.25rem;
-      border-radius: 12px;
-      border: 1px solid #334155;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
-    }
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-    .progress-track {
-      width: 100%;
-      height: 8px;
-      background: #334155;
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #0284c7, #38bdf8);
-      border-radius: 999px;
-      transition: width 0.12s ease-out;
-    }
-
+    /* ==========================================================
+       ANIMATION LOADING & TIẾN TRÌNH CHI TIẾT
+       ========================================================== */
     #loading-book-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(10px);
       z-index: 50;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: 1.5rem;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      opacity: 1;
+      visibility: visible;
+    }
+    #loading-book-overlay.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-ring {
+      width: 52px;
+      height: 52px;
+      border: 3.5px solid rgba(56, 189, 248, 0.15);
+      border-top: 3.5px solid var(--accent);
+      border-right: 3.5px solid var(--accent);
+      border-radius: 50%;
+      animation: spinLoader 0.75s linear infinite;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+    }
+    @keyframes spinLoader {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .progress-box {
+      width: 100%;
+      max-width: 420px;
+      background: #1e293b;
+      padding: 1.4rem;
+      border-radius: 14px;
+      border: 1px solid #334155;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .progress-header-pct {
+      font-size: 1.15rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .progress-track {
+      width: 100%;
+      height: 9px;
+      background: #0f172a;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #334155;
+    }
+    @keyframes shimmerMove {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0284c7 0%, #38bdf8 45%, #a5f3fc 55%, #38bdf8 65%, #0284c7 100%);
+      background-size: 200% 100%;
+      animation: shimmerMove 1.8s infinite linear;
+      border-radius: 999px;
+      transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .progress-detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .progress-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulseDot 1.2s infinite ease-in-out;
+    }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(0.8); opacity: 0.5; }
+      50% { transform: scale(1.3); opacity: 1; }
     }
 
     @media (max-width: 768px) {
@@ -629,14 +680,20 @@
       </div>
     </div>
 
+    <!-- OVERLAY LOADING NÂNG CẤP HOẠT ẢNH & TIẾN TRÌNH -->
     <div id="loading-book-overlay">
+      <div class="loader-ring"></div>
       <div class="progress-box">
         <div class="progress-header">
-          <span id="book-prog-text">Đang nạp Chap...</span>
-          <span id="book-prog-pct" style="color: var(--accent);">0%</span>
+          <span id="book-prog-title">Đang nạp Chap...</span>
+          <span id="book-prog-pct" class="progress-header-pct">0%</span>
         </div>
         <div class="progress-track">
           <div id="book-prog-bar" class="progress-fill"></div>
+        </div>
+        <div class="progress-detail">
+          <span class="progress-dot"></span>
+          <span id="book-prog-detail">Đang khởi tạo kết nối...</span>
         </div>
       </div>
     </div>
@@ -695,6 +752,11 @@
     const memoryPdfCache = new Map();
     const activeFetches = new Map();
 
+    // HÀM NHƯỜNG LUỒNG CHÍNH: GIẢI QUYẾT TRIỆT ĐỂ LỖI KHỰNG TRÌNH DUYỆT
+    function yieldFrame() {
+      return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    }
+
     function openPdfDB() {
       return new Promise((resolve) => {
         const req = indexedDB.open("MangaPdfStore_v3", 1);
@@ -735,10 +797,17 @@
       return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
     }
 
-    function setBookProgress(pct, text) {
-      document.getElementById("book-prog-bar").style.width = pct + "%";
-      document.getElementById("book-prog-pct").innerText = Math.round(pct) + "%";
-      if (text) document.getElementById("book-prog-text").innerText = text;
+    // CẬP NHẬT GIAO DIỆN TIẾN TRÌNH RÕ RÀNG
+    function setBookProgress(pct, title, detail) {
+      const bar = document.getElementById("book-prog-bar");
+      const pctEl = document.getElementById("book-prog-pct");
+      const titleEl = document.getElementById("book-prog-title");
+      const detailEl = document.getElementById("book-prog-detail");
+
+      if (bar) bar.style.width = Math.min(100, Math.max(0, pct)) + "%";
+      if (pctEl) pctEl.innerText = Math.round(pct) + "%";
+      if (title && titleEl) titleEl.innerText = title;
+      if (detail && detailEl) detailEl.innerText = detail;
     }
 
     function getReadChapters(bookId) {
@@ -785,8 +854,6 @@
       books.forEach((book, idx) => {
         const card = document.createElement("div");
         card.className = animate ? "book-card book-card-animated" : "book-card";
-        
-        // Hiệu ứng từng truyện xuất hiện nối tiếp nhau (staggered delay)
         if (animate) {
           card.style.animationDelay = `${Math.min(idx * 40, 800)}ms`;
         }
@@ -813,7 +880,6 @@
     }
 
     async function initShelf() {
-      // BƯỚC 1: Kiểm tra xem có dữ liệu đã lưu trong localStorage không
       const cached = localStorage.getItem("cached_shelf_books");
       let hasCache = false;
 
@@ -822,20 +888,17 @@
           const books = JSON.parse(cached);
           if (Array.isArray(books) && books.length > 0) {
             hasCache = true;
-            // HIỆN NGAY LẬP TỨC (0.05 giây) - KHÔNG ĐỢI DRIVE
             renderBookGrid(books, false);
             document.getElementById("status-tag").innerText = "Đang kiểm tra cập nhật...";
           }
         } catch (e) {}
       }
 
-      // Nếu là lần đầu mở web (chưa có cache), hiện khung xương Skeleton
       if (!hasCache) {
         renderSkeletonCards(8);
         document.getElementById("status-tag").innerText = "Đang kết nối Drive...";
       }
 
-      // BƯỚC 2: Chạy nền ngầm kiểm tra cập nhật từ Google Drive
       fetchBookList(false, hasCache);
     }
 
@@ -860,10 +923,8 @@
         const oldCache = localStorage.getItem("cached_shelf_books");
         const newCache = JSON.stringify(books);
 
-        // Lưu vào bộ nhớ cục bộ
         localStorage.setItem("cached_shelf_books", newCache);
 
-        // Nếu dữ liệu có thay đổi hoặc trước đó chưa có cache, vẽ các truyện xuất hiện lần lượt
         if (!hasCache || oldCache !== newCache || forceRefresh) {
           renderBookGrid(books, true);
         }
@@ -882,10 +943,13 @@
       fetchBookList(true, false);
     }
 
-    // TẢI FILE PDF & GIẢI MÃ NATIVE SIÊU TỐC
-    async function fetchAndCachePdf(pdfId) {
+    // TẢI FILE PDF & GIẢI MÃ NATIVE ĐƯỢC NHƯỜNG LUỒNG TRÁNH KHỰNG
+    async function fetchAndCachePdf(pdfId, progressCallback) {
       let cached = await getStoredPdf(pdfId);
-      if (cached) return cached;
+      if (cached) {
+        if (progressCallback) progressCallback(60, "Đã có sẵn trong bộ nhớ đệm", "Mở trực tiếp từ IndexedDB");
+        return cached;
+      }
 
       if (activeFetches.has(pdfId)) {
         return activeFetches.get(pdfId);
@@ -893,9 +957,15 @@
 
       const fetchPromise = (async () => {
         try {
+          if (progressCallback) progressCallback(20, "Đang tải dữ liệu từ Google Drive...", "Đang kết nối API");
+          
           const res = await fetch(`${GOOGLE_SCRIPT_URL}?pdfId=${pdfId}`);
           const data = await res.json();
+          
           if (data.success && data.data) {
+            if (progressCallback) progressCallback(55, "Đang giải mã luồng tệp tin...", "Chuyển đổi dữ liệu nhị phân");
+            await yieldFrame(); // Nhường 1 frame để thanh loading cập nhật
+
             const resBlob = await fetch("data:application/pdf;base64," + data.data);
             const arrayBuf = await resBlob.arrayBuffer();
             const uint8 = new Uint8Array(arrayBuf);
@@ -960,7 +1030,6 @@
           }
           renderDetailChapGrid(book.id, bookChapters);
 
-          // Tải trước ngầm tuần tự Chap 1 rồi Chap 2
           prefetchSequentially([bookChapters[0], bookChapters[1]]);
         }
       } catch (e) {
@@ -987,7 +1056,9 @@
       startReadingChapter(0);
     }
 
-    // 3. MỞ ĐỌC DẠNG CUỘN DỌC TỐC ĐỘ CAO
+    // ==========================================================
+    // 3. MỞ ĐỌC DẠNG CUỘN DỌC - HOÀN TOÀN KHÔNG BỊ KHỰNG
+    // ==========================================================
     async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook || !bookChapters[chapIdx]) return;
 
@@ -1008,21 +1079,40 @@
       document.getElementById("current-chap-label").innerText = `Chap ${chapIdx + 1}`;
 
       const overlay = document.getElementById("loading-book-overlay");
-      overlay.style.display = "flex";
-      setBookProgress(30, `Đang kết nối tải Chap ${chapIdx + 1}...`);
+      overlay.classList.remove("hide");
 
       const wrapper = document.getElementById("scroll-pages-wrapper");
       wrapper.innerHTML = "";
       document.getElementById("end-chap-nav").style.display = "none";
       document.getElementById("reader-scroll-container").scrollTop = 0;
 
+      // Bước 1: Khởi động hoạt ảnh loading
+      setBookProgress(12, `Đang kết nối Chap ${chapIdx + 1}...`, "Giai đoạn 1/4: Thiết lập kênh truyền");
+      await yieldFrame();
+
+      // Giả lập tiến trình chạy mượt khi chờ mạng
+      let fakeProgress = 15;
+      const progressTicker = setInterval(() => {
+        if (fakeProgress < 48) {
+          fakeProgress += 6;
+          setBookProgress(fakeProgress, `Đang nhận dữ liệu Chap ${chapIdx + 1}...`, "Giai đoạn 1/4: Đang tải tệp tin");
+        }
+      }, 160);
+
       try {
-        setBookProgress(50, "Đang nạp dữ liệu PDF...");
-        const pdfBytes = await fetchAndCachePdf(chapFile.id);
+        const pdfBytes = await fetchAndCachePdf(chapFile.id, (pct, title, detail) => {
+          clearInterval(progressTicker);
+          setBookProgress(pct, title, detail);
+        });
+        clearInterval(progressTicker);
+
         if (sessionId !== currentSessionId) return;
         if (!pdfBytes) throw new Error("Không thể tải file PDF Chap.");
 
-        setBookProgress(85, "Khởi tạo trang đọc...");
+        // Bước 2: Nạp PDF vào Engine Worker của PDF.js
+        setBookProgress(68, "Khởi tạo công cụ đọc...", "Giai đoạn 2/4: Phân tích cấu trúc tệp PDF");
+        await yieldFrame(); // Nhường luồng vẽ giao diện
+
         currentPdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
         currentNumPages = currentPdfDoc.numPages;
 
@@ -1030,6 +1120,10 @@
 
         document.getElementById("current-page").innerText = "1";
         document.getElementById("total-pages").innerText = currentNumPages;
+
+        // Bước 3: Đọc thông số trang đầu tiên & tạo khung trang
+        setBookProgress(82, "Đang chuẩn bị khung trang...", `Giai đoạn 3/4: Đã xác nhận ${currentNumPages} trang`);
+        await yieldFrame();
 
         const page1 = await currentPdfDoc.getPage(1);
         const vp1 = page1.getViewport({ scale: 1.0 });
@@ -1049,6 +1143,7 @@
           wrapper.appendChild(container);
         }
 
+        // Bước 4: Thiết lập IntersectionObserver tải ngầm khi cuộn
         pageObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -1081,7 +1176,10 @@
           scrollTrackerObserver.observe(c);
         });
 
-        // Vẽ ngay trang 1 rồi tắt overlay
+        // Bước 5: Render trang 1 trước khi gỡ màn hình chờ
+        setBookProgress(95, "Đang dựng trang bìa nét cao...", "Giai đoạn 4/4: Hoàn thiện chất lượng ảnh");
+        await yieldFrame();
+
         const firstPageEl = allContainers[0];
         if (firstPageEl) {
           firstPageEl.dataset.rendered = "true";
@@ -1095,12 +1193,17 @@
         document.getElementById("end-chap-nav").style.display = "flex";
 
         markChapAsRead(selectedBook.id, chapIdx);
-        overlay.style.display = "none";
 
-        // Tải trước ngầm tuần tự Chap kế tiếp
+        // Bước 6: Hoàn tất 100% và ẩn mờ dần màn hình loading
+        setBookProgress(100, "Sẵn sàng!", "Mời bạn thưởng thức truyện");
+        await new Promise(r => setTimeout(r, 180));
+        overlay.classList.add("hide");
+
+        // Tải trước ngầm tuần tự các Chap tiếp theo
         prefetchSequentially([bookChapters[chapIdx + 1], bookChapters[chapIdx + 2]]);
 
       } catch (err) {
+        clearInterval(progressTicker);
         if (sessionId === currentSessionId) {
           alert("Lỗi tải Chap: " + err.message);
           backToDetail();
