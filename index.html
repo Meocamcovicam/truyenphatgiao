@@ -319,8 +319,9 @@
       touch-action: pan-x pan-y;
     }
 
-    /* THANH CÔNG CỤ LUÔN NẰM Ở ĐẦU TRANG */
+    /* THANH CÔNG CỤ LUÔN CỐ ĐỊNH Ở ĐẦU TRANG */
     .reader-toolbar {
+      position: relative;
       flex-shrink: 0;
       width: 100%;
       background: rgba(15, 23, 42, 0.98);
@@ -418,7 +419,7 @@
       border: 1px solid #334155;
     }
 
-    /* VÙNG CUỘN ĐỌC DỌC - DUY NHẤT VÙNG NÀY ĐƯỢC CUỘN */
+    /* VÙNG CUỘN ĐỌC DỌC */
     #reader-scroll-container {
       flex: 1;
       min-height: 0;
@@ -458,8 +459,7 @@
       display: block;
       width: 100% !important;
       height: auto !important;
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: high-quality;
+      image-rendering: auto; /* Chuẩn khử răng cưa mượt mà */
     }
     .page-loading-skeleton {
       color: #64748b;
@@ -622,7 +622,7 @@
       50% { transform: scale(1.3); opacity: 1; }
     }
 
-    /* ĐIỀU CHỈNH GIAO DIỆN THEO THIẾT BỊ */
+    /* BỐ TRÍ NỀN TẢNG PC & MOBILE */
     @media (min-width: 768px) {
       .reader-toolbar {
         flex-direction: row;
@@ -728,7 +728,7 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC CUỘN DỌC (CỐ ĐỊNH HOÀN TOÀN) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC CUỘN DỌC -->
   <div id="reader-view">
     <!-- THANH MENU & ZOOM LUÔN Ở ĐẦU TRANG -->
     <div class="reader-toolbar">
@@ -824,20 +824,18 @@
       return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
     }
 
-    // ==========================================================
-    // CHẶN HOÀN TOÀN CỬ CHỈ 2 NGÓN TAY LÀM LỆCH/MẤT THANH MENU
-    // ==========================================================
+    // CHẶN HOÀN TOÀN CỬ CHỈ 2 NGÓN TAY CỦA TRÌNH DUYỆT ĐỂ KHÔNG BỊ TRÔI KHUNG
     const readerViewEl = document.getElementById("reader-view");
     
     readerViewEl.addEventListener("touchstart", (e) => {
       if (e.touches.length > 1) {
-        e.preventDefault(); // Chặn cử chỉ 2 ngón tay của trình duyệt
+        e.preventDefault();
       }
     }, { passive: false });
 
     readerViewEl.addEventListener("touchmove", (e) => {
       if (e.touches.length > 1) {
-        e.preventDefault(); // Chặn phóng to/cuộn ngoài ý muốn
+        e.preventDefault();
       }
     }, { passive: false });
 
@@ -1084,6 +1082,7 @@
     async function openBookDetail(book) {
       selectedBook = book;
 
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
       document.getElementById("shelf-view").style.display = "none";
       document.getElementById("reader-view").style.display = "none";
@@ -1143,7 +1142,7 @@
     }
 
     // ==========================================================
-    // 3. MỞ ĐỌC DẠNG CUỘN DỌC - GHIM CHẶT MENU Ở ĐẦU TRANG
+    // 3. MỞ ĐỌC DẠNG CUỘN DỌC - CHẤT LƯỢNG CAO NHẤT
     // ==========================================================
     async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook || !bookChapters[chapIdx]) return;
@@ -1158,7 +1157,8 @@
 
       const chapFile = bookChapters[chapIdx];
 
-      // KHÓA CUỘN BODY - ĐẢM BẢO CHỈ CUỘN TRONG KHUNG ĐỌC
+      // KHÓA CUỘN HOÀN TOÀN TRÊN CẢ HTML VÀ BODY
+      document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
       document.getElementById("main-header").style.display = "none";
       document.getElementById("detail-view").style.display = "none";
@@ -1258,7 +1258,7 @@
           scrollTrackerObserver.observe(c);
         });
 
-        setBookProgress(95, "Đang dựng trang bìa nét cao...", "Giai đoạn 4/4: Hoàn thiện chất lượng ảnh");
+        setBookProgress(95, "Đang dựng trang bìa Ultra-HD...", "Giai đoạn 4/4: Hoàn thiện độ sắc nét gốc");
         await yieldFrame();
 
         const firstPageEl = allContainers[0];
@@ -1290,6 +1290,7 @@
       }
     }
 
+    // VẼ TRANG VỚI ĐỘ NÉT GỐC TỐI ĐA (ULTRA-HD RESOLUTION)
     async function renderSinglePage(pageNum, container) {
       if (!currentPdfDoc) return;
 
@@ -1302,12 +1303,22 @@
         const page = await currentPdfDoc.getPage(pageNum);
         const baseVp = page.getViewport({ scale: 1.0 });
 
-        const dpr = Math.max(window.devicePixelRatio || 1, 2.0);
-        const containerWidth = container.clientWidth || (window.innerWidth <= 768 ? window.innerWidth : BASE_READER_WIDTH);
+        const dpr = window.devicePixelRatio || 1;
+        const isMobile = window.innerWidth <= 768;
+        const containerWidth = container.clientWidth || (isMobile ? window.innerWidth : BASE_READER_WIDTH);
 
-        const targetPixelWidth = Math.max(Math.round(containerWidth * dpr), 1600);
+        // ĐỘ PHÂN GIẢI ULTRA-HD: TỐI THIỂU 2600PX, TỐI ĐA 3600PX
+        // GIỮ NGUYÊN 100% ĐỘ NÉT CỦA FILE PDF GỐC, KHÔNG BỊ CO NHỎ
+        const targetPixelWidth = Math.min(
+          Math.max(
+            Math.round(containerWidth * Math.max(dpr, 2.5) * (currentZoomPercent / 100)),
+            Math.round(baseVp.width * 3.5),
+            2600
+          ),
+          3600
+        );
+
         const scale = targetPixelWidth / baseVp.width;
-
         const viewport = page.getViewport({ scale: scale });
 
         let canvas = container.querySelector("canvas");
@@ -1323,10 +1334,17 @@
         canvas.style.height = "auto";
         container.style.aspectRatio = "";
 
-        const ctx = canvas.getContext("2d", { alpha: false });
+        const ctx = canvas.getContext("2d", { 
+          alpha: false,
+          willReadFrequently: false 
+        });
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
         const renderTask = page.render({
           canvasContext: ctx,
-          viewport: viewport
+          viewport: viewport,
+          intent: 'display'
         });
         container._renderTask = renderTask;
 
@@ -1365,10 +1383,11 @@
       document.documentElement.style.setProperty('--reader-max-width', `${targetWidth}px`);
       document.documentElement.style.setProperty('--reader-width', `${targetWidth}px`);
 
+      // Tự động render lại trang sau 250ms để cập nhật độ nét tương ứng với tỉ lệ zoom mới
       clearTimeout(zoomDebounceTimer);
       zoomDebounceTimer = setTimeout(() => {
         reRenderVisiblePages();
-      }, 280);
+      }, 250);
     }
 
     function reRenderVisiblePages() {
@@ -1459,7 +1478,8 @@
     function backToDetail() {
       currentSessionId++;
       resetZoom();
-      document.body.style.overflow = ""; // Mở lại cuộn cho body
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
@@ -1476,7 +1496,8 @@
     function backToShelf() {
       currentSessionId++;
       resetZoom();
-      document.body.style.overflow = ""; // Mở lại cuộn cho body
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
