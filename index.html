@@ -50,7 +50,7 @@
     }
     header h1:hover { opacity: 0.8; text-decoration: underline; }
     
-    /* GIAO DIỆN 1: KỆ SÁCH (HOME) */
+    /* GIAO DIỆN 1: KỆ SÁCH */
     #shelf-view {
       padding: 1.5rem;
       max-width: 1200px;
@@ -249,13 +249,8 @@
       border-color: #334155;
     }
     .chap-item.read:hover { background: #334155; color: #ffffff; }
-    .chap-item.active {
-      outline: 2px solid var(--accent);
-      background: #0369a1;
-      color: #fff;
-    }
 
-    /* GIAO DIỆN 3: TRÌNH ĐỌC CUỘN DỌC (VERTICAL SCROLL) */
+    /* GIAO DIỆN 3: TRÌNH ĐỌC CUỘN DỌC */
     #reader-view {
       display: none;
       flex-direction: column;
@@ -295,7 +290,43 @@
     .btn-accent { background: var(--accent-hover); }
     .btn-accent:hover { background: #0369a1; }
 
-    /* VÙNG CUỘN ĐỌC DỌC */
+    /* THANH ZOOM PC */
+    .pc-zoom-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #1e293b;
+      padding: 0.25rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .pc-zoom-toolbar input[type="range"] {
+      width: 85px;
+      height: 5px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .pc-zoom-toolbar span {
+      font-size: 0.8rem;
+      min-width: 38px;
+      text-align: center;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .btn-icon {
+      background: #334155;
+      color: white;
+      border: none;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-icon:hover { background: #475569; }
+
+    /* VÙNG CUỘN ĐỌC DỌC & CẢM ỨNG ZOOM 2 NGÓN */
     #reader-scroll-container {
       flex: 1;
       overflow-y: auto;
@@ -304,9 +335,9 @@
       flex-direction: column;
       align-items: center;
       padding: 0.8rem 0 3rem 0;
-      scroll-behavior: smooth;
       background: #090e17;
       position: relative;
+      touch-action: pan-y pinch-zoom;
     }
     
     .scroll-pages-wrapper {
@@ -315,10 +346,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px; /* Khoảng cách giữa các trang truyện */
+      gap: 4px;
+      transform-origin: top center;
+      transition: transform 0.05s linear;
+      will-change: transform;
     }
 
-    /* Khung trang PDF dạng placeholder */
     .pdf-page-container {
       width: 100%;
       position: relative;
@@ -341,7 +374,6 @@
       user-select: none;
     }
 
-    /* Điều hướng cuối chap */
     .end-chap-nav {
       margin-top: 2rem;
       padding: 1.5rem;
@@ -353,7 +385,7 @@
       border-top: 1px solid #334155;
     }
 
-    /* Popup Modal Chọn Chapter */
+    /* POPUP CHỌN NHANH CHAP */
     #chap-modal {
       display: none;
       position: fixed;
@@ -391,7 +423,7 @@
       gap: 0.6rem;
     }
 
-    /* Loading Box */
+    /* LOADING BOX */
     .progress-box {
       width: 100%;
       max-width: 380px;
@@ -455,14 +487,15 @@
       .btn-read-start { width: 100%; justify-content: center; }
       #reader-scroll-container { padding: 0 0 2rem 0; }
       .scroll-pages-wrapper { gap: 2px; }
+      .pc-zoom-toolbar { display: none; } /* Trên mobile ưu tiên dùng cử chỉ 2 ngón tay */
     }
 
     @media (max-width: 600px) {
       header { height: 46px; padding: 0 0.8rem; }
       header h1 { font-size: 1rem; }
-      #current-book-name { max-width: 30% !important; font-size: 0.8rem !important; }
+      #current-book-name { max-width: 25% !important; font-size: 0.8rem !important; }
       .reader-toolbar { font-size: 0.8rem !important; padding: 0 0.5rem; }
-      .btn { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
+      .btn { padding: 0.35rem 0.6rem; font-size: 0.78rem; }
       .book-cover { height: 190px; }
       .chap-grid, .modal-body { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
     }
@@ -475,7 +508,7 @@
     <div id="status-tag" style="font-size: 0.8rem; color: var(--text-muted);">Đang kết nối...</div>
   </header>
 
-  <!-- MÀN HÌNH 1: KỆ SÁCH (HOME) -->
+  <!-- MÀN HÌNH 1: KỆ SÁCH -->
   <main id="shelf-view">
     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
       <h2>Danh mục truyện tranh</h2>
@@ -497,7 +530,7 @@
     <div id="shelf-grid" class="grid"></div>
   </main>
 
-  <!-- MÀN HÌNH 2: CHI TIẾT TRUYỆN & DANH SÁCH CHAP -->
+  <!-- MÀN HÌNH 2: CHI TIẾT TRUYỆN -->
   <div id="detail-view">
     <div style="display: flex; justify-content: flex-start;">
       <button class="btn" onclick="backToShelf()">← Quay lại kệ sách</button>
@@ -529,17 +562,26 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC CUỘN DỌC (WEBTOON SCROLL) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC CUỘN DỌC -->
   <div id="reader-view">
     <div class="reader-toolbar">
       <button class="btn" onclick="backToDetail()">← Mục lục</button>
-      <span id="current-book-name" style="font-weight: 600; max-width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+      <span id="current-book-name" style="font-weight: 600; max-width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
       
       <button class="btn btn-accent" onclick="openChapModal()">
         📚 <span id="current-chap-label">Chap 1</span> ▾
       </button>
 
-      <div style="font-size: 0.85rem;">
+      <!-- THANH ĐIỀU KHIỂN ZOOM CHO PC -->
+      <div class="pc-zoom-toolbar">
+        <button class="btn-icon" onclick="stepPcZoom(-10)" title="Thu nhỏ">−</button>
+        <input type="range" id="pc-zoom-slider" min="60" max="180" step="5" value="100" oninput="onPcZoomSlider(this.value)">
+        <button class="btn-icon" onclick="stepPcZoom(10)" title="Phóng to">+</button>
+        <span id="pc-zoom-val">100%</span>
+        <button class="btn-icon" onclick="resetPcZoom()" title="Về 100%">↺</button>
+      </div>
+
+      <div style="font-size: 0.85rem; white-space: nowrap;">
         Trang <span id="current-page">1</span>/<span id="total-pages">1</span>
       </div>
     </div>
@@ -547,7 +589,7 @@
     <div id="loading-book-overlay">
       <div class="progress-box">
         <div class="progress-header">
-          <span id="book-prog-text">Đang tải PDF Chap...</span>
+          <span id="book-prog-text">Đang nạp dữ liệu Chap...</span>
           <span id="book-prog-pct" style="color: var(--accent);">0%</span>
         </div>
         <div class="progress-track">
@@ -556,7 +598,7 @@
       </div>
     </div>
 
-    <!-- KHU VỰC CUỘN CÁC TRANG TRUYỆN -->
+    <!-- KHU VỰC CUỘN ĐỌC DỌC -->
     <div id="reader-scroll-container">
       <div class="scroll-pages-wrapper" id="scroll-pages-wrapper"></div>
       
@@ -593,12 +635,25 @@
     let pageObserver = null;
     let scrollTrackerObserver = null;
 
+    // Quản lý Zoom PC & Mobile
+    let pcZoomPercent = 100;
+    const BASE_READER_WIDTH = 820;
+
+    // Quản lý Pinch-to-zoom Mobile
+    let mobileScale = 1;
+    let mobileStartDist = 0;
+    let mobileStartScale = 1;
+    let mobilePanX = 0, mobilePanY = 0;
+    let mobileStartX = 0, mobileStartY = 0;
+    let lastTapTime = 0;
+    let isPinching = false;
+
     // Cache PDF Binary
     const memoryPdfCache = new Map();
 
     function openPdfDB() {
       return new Promise((resolve) => {
-        const req = indexedDB.open("MangaPdfStore_v2", 1);
+        const req = indexedDB.open("MangaPdfStore_v3", 1);
         req.onupgradeneeded = (e) => e.target.result.createObjectStore("chap_pdfs");
         req.onsuccess = (e) => resolve(e.target.result);
         req.onerror = () => resolve(null);
@@ -719,6 +774,7 @@
       });
     }
 
+    // TẢI FILE PDF & CHUYỂN ĐỔI NHANH
     async function fetchAndCachePdf(pdfId) {
       let cached = await getStoredPdf(pdfId);
       if (cached) return cached;
@@ -728,15 +784,25 @@
         const data = await res.json();
         if (data.success && data.data) {
           const raw = atob(data.data);
-          const uint8 = new Uint8Array(raw.length);
-          for (let i = 0; i < raw.length; i++) uint8[i] = raw.charCodeAt(i);
+          const len = raw.length;
+          const uint8 = new Uint8Array(len);
+          for (let i = 0; i < len; i++) uint8[i] = raw.charCodeAt(i);
           await storePdf(pdfId, uint8);
           return uint8;
         }
       } catch (e) {
-        console.warn("Lỗi tải ngầm PDF:", e);
+        console.warn("Lỗi tải PDF ngầm:", e);
       }
       return null;
+    }
+
+    // TẢI TRƯỚC NGẦM ĐÓN ĐẦU CÁC CHAP TIẾP THEO
+    async function prefetchAhead(startIdx, count = 2) {
+      for (let i = startIdx; i < startIdx + count && i < bookChapters.length; i++) {
+        if (bookChapters[i]) {
+          fetchAndCachePdf(bookChapters[i].id);
+        }
+      }
     }
 
     // 2. CHI TIẾT TRUYỆN
@@ -774,9 +840,8 @@
           }
           renderDetailChapGrid(book.id, bookChapters);
 
-          if (bookChapters.length > 0) {
-            fetchAndCachePdf(bookChapters[0].id);
-          }
+          // Tải trước ngầm Chap 1 và Chap 2 ngay khi mở trang chi tiết
+          prefetchAhead(0, 2);
         }
       } catch (e) {
         console.error("Lỗi lấy danh sách chap:", e);
@@ -802,14 +867,16 @@
       startReadingChapter(0);
     }
 
-    // 3. MỞ ĐỌC DẠNG CUỘN DỌC LIÊN TỤC (WEBTOON SCROLL ENGINE)
+    // 3. MỞ ĐỌC DẠNG CUỘN DỌC TỐC ĐỘ CAO
     async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook || !bookChapters[chapIdx]) return;
 
       const sessionId = ++currentSessionId;
       currentChapIndex = chapIdx;
 
-      // Hủy observer cũ nếu có
+      // Reset Zoom Mobile & PC
+      resetMobileZoom();
+      
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
@@ -823,7 +890,7 @@
 
       const overlay = document.getElementById("loading-book-overlay");
       overlay.style.display = "flex";
-      setBookProgress(30, `Đang nạp dữ liệu Chap ${chapIdx + 1}...`);
+      setBookProgress(35, `Đang nạp Chap ${chapIdx + 1}...`);
 
       const wrapper = document.getElementById("scroll-pages-wrapper");
       wrapper.innerHTML = "";
@@ -835,29 +902,24 @@
         if (sessionId !== currentSessionId) return;
         if (!pdfBytes) throw new Error("Không thể tải file PDF Chap.");
 
-        setBookProgress(65, "Khởi tạo tài liệu PDF...");
-        const safeBufferCopy = pdfBytes.slice();
-        currentPdfDoc = await pdfjsLib.getDocument({ data: safeBufferCopy }).promise;
+        setBookProgress(70, "Chuẩn bị trang đọc...");
+        currentPdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
         currentNumPages = currentPdfDoc.numPages;
 
-        if (currentNumPages === 0) throw new Error("File PDF không có trang nào.");
+        if (currentNumPages === 0) throw new Error("File PDF rỗng.");
 
         document.getElementById("current-page").innerText = "1";
         document.getElementById("total-pages").innerText = currentNumPages;
 
-        // Lấy thông số trang đầu tiên để đặt tỷ lệ khung hình chuẩn
         const page1 = await currentPdfDoc.getPage(1);
         const vp1 = page1.getViewport({ scale: 1.0 });
-        const defaultAspectRatio = vp1.height / vp1.width;
 
-        // Tạo khung placeholder cho toàn bộ các trang trước
+        // Tạo sẵn placeholder cho toàn bộ các trang để cuộn mượt
         for (let p = 1; p <= currentNumPages; p++) {
           const container = document.createElement("div");
           container.className = "pdf-page-container";
           container.dataset.page = p;
           container.dataset.rendered = "false";
-          
-          // Giữ tỷ lệ khung hình để thanh cuộn mượt và không bị nhảy giật
           container.style.aspectRatio = `${vp1.width} / ${vp1.height}`;
 
           const loadingTxt = document.createElement("div");
@@ -868,7 +930,7 @@
           wrapper.appendChild(container);
         }
 
-        // Tạo IntersectionObserver để Lazy Load: Cuộn tới trang nào thì vẽ trang đó
+        // Tối ưu hóa IntersectionObserver: Render đón đầu trước 400px
         pageObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -881,10 +943,9 @@
           });
         }, {
           root: document.getElementById("reader-scroll-container"),
-          rootMargin: "600px 0px" // Bắt đầu render trước khi cuộn tới 600px
+          rootMargin: "400px 0px"
         });
 
-        // Observer theo dõi trang đang hiển thị để cập nhật số trang trên thanh toolbar
         scrollTrackerObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -902,19 +963,26 @@
           scrollTrackerObserver.observe(c);
         });
 
-        // Thiết lập nút chuyển chap ở chân trang
+        // VẼ TRANG 1 NGAY LẬP TỨC ĐỂ TẮT MÀN HÌNH CHỜ NHANH
+        const firstPageEl = allContainers[0];
+        if (firstPageEl) {
+          firstPageEl.dataset.rendered = "true";
+          await renderSinglePage(1, firstPageEl);
+        }
+
+        // Thiết lập nút chuyển Chap cuối trang
         const btnPrev = document.getElementById("btn-prev-chap");
         const btnNext = document.getElementById("btn-next-chap");
         btnPrev.style.display = (chapIdx > 0) ? "inline-flex" : "none";
         btnNext.style.display = (chapIdx + 1 < bookChapters.length) ? "inline-flex" : "none";
         document.getElementById("end-chap-nav").style.display = "flex";
 
-        setBookProgress(100, "Hoàn tất!");
         markChapAsRead(selectedBook.id, chapIdx);
         overlay.style.display = "none";
 
-        // Tải trước ngầm Chap kế tiếp vào bộ nhớ đệm
-        if (bookChapters[chapIdx + 1]) fetchAndCachePdf(bookChapters[chapIdx + 1].id);
+        // Tải trước ngầm các Chap kế tiếp đón đầu
+        prefetchAhead(chapIdx + 1, 2);
+        if (chapIdx > 0) fetchAndCachePdf(bookChapters[chapIdx - 1].id);
 
       } catch (err) {
         if (sessionId === currentSessionId) {
@@ -924,15 +992,15 @@
       }
     }
 
-    // VẼ TRANG GỐC KHÔNG NÉN VỚI ĐỘ NÉT CAO (RETINA HI-RES)
+    // VẼ TRANG NÉT GỐC CHUẨN XÁC, TỐI ƯU BỘ NHỚ
     async function renderSinglePage(pageNum, container) {
       if (!currentPdfDoc) return;
       try {
         const page = await currentPdfDoc.getPage(pageNum);
         const baseVp = page.getViewport({ scale: 1.0 });
 
-        // Sử dụng devicePixelRatio để hình ảnh rõ nét tuyệt đối trên màn hình điện thoại & Retina
-        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        // Cân bằng DPR ở mức 1.75: Vừa sắc nét Retina, vừa siêu nhẹ và nhanh
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
         const containerWidth = container.clientWidth || 800;
         const scale = (containerWidth / baseVp.width) * dpr;
 
@@ -952,7 +1020,7 @@
         }).promise;
 
         container.innerHTML = "";
-        container.style.aspectRatio = ""; // Gỡ bỏ sau khi canvas thực tế đã hiển thị
+        container.style.aspectRatio = "";
         container.appendChild(canvas);
 
       } catch (e) {
@@ -960,6 +1028,126 @@
       }
     }
 
+    // ==========================================
+    // 4. XỬ LÝ ZOOM PC (SLIDER RỘNG KHUNG ĐỌC)
+    // ==========================================
+    function applyPcZoom(val) {
+      pcZoomPercent = Math.max(60, Math.min(180, parseInt(val)));
+      document.getElementById("pc-zoom-slider").value = pcZoomPercent;
+      document.getElementById("pc-zoom-val").innerText = pcZoomPercent + "%";
+      
+      const targetWidth = Math.round(BASE_READER_WIDTH * (pcZoomPercent / 100));
+      document.documentElement.style.setProperty('--reader-max-width', `${targetWidth}px`);
+    }
+
+    function onPcZoomSlider(val) {
+      applyPcZoom(val);
+    }
+
+    function stepPcZoom(delta) {
+      applyPcZoom(pcZoomPercent + delta);
+    }
+
+    function resetPcZoom() {
+      applyPcZoom(100);
+    }
+
+    // ==========================================
+    // 5. XỬ LÝ PINCH-TO-ZOOM 2 NGÓN TRÊN MOBILE
+    // ==========================================
+    const scrollContainer = document.getElementById("reader-scroll-container");
+    const pagesWrapper = document.getElementById("scroll-pages-wrapper");
+
+    function getTouchDistance(t1, t2) {
+      return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    }
+
+    function applyMobileTransform() {
+      if (mobileScale <= 1.02) {
+        mobileScale = 1;
+        mobilePanX = 0;
+        mobilePanY = 0;
+        pagesWrapper.style.transform = "";
+        scrollContainer.style.overflowY = "auto";
+      } else {
+        pagesWrapper.style.transform = `translate(${mobilePanX}px, ${mobilePanY}px) scale(${mobileScale})`;
+        scrollContainer.style.overflowY = "hidden"; // Giữ cố định khi phóng to để pan tự do
+      }
+    }
+
+    function resetMobileZoom() {
+      mobileScale = 1;
+      mobilePanX = 0;
+      mobilePanY = 0;
+      applyMobileTransform();
+    }
+
+    scrollContainer.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        // Bắt đầu chụm 2 ngón tay
+        isPinching = true;
+        mobileStartDist = getTouchDistance(e.touches[0], e.touches[1]);
+        mobileStartScale = mobileScale;
+        e.preventDefault();
+      } else if (e.touches.length === 1) {
+        // Chạm đúp 2 lần (Double-tap) để phóng to / thu nhỏ nhanh
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          if (mobileScale > 1.2) {
+            resetMobileZoom();
+          } else {
+            mobileScale = 1.8;
+            applyMobileTransform();
+          }
+          lastTapTime = 0;
+          return;
+        }
+        lastTapTime = now;
+
+        // Nếu đang phóng to, 1 ngón tay dùng để kéo pan
+        if (mobileScale > 1.02) {
+          mobileStartX = e.touches[0].clientX - mobilePanX;
+          mobileStartY = e.touches[0].clientY - mobilePanY;
+        }
+      }
+    }, { passive: false });
+
+    scrollContainer.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2 && isPinching) {
+        // Cử chỉ Zoom 2 ngón
+        const currentDist = getTouchDistance(e.touches[0], e.touches[1]);
+        if (mobileStartDist > 0) {
+          const factor = currentDist / mobileStartDist;
+          mobileScale = Math.min(3.5, Math.max(1, mobileStartScale * factor));
+          applyMobileTransform();
+        }
+        e.preventDefault();
+      } else if (e.touches.length === 1 && mobileScale > 1.02) {
+        // Kéo di chuyển ảnh khi đang phóng to
+        mobilePanX = e.touches[0].clientX - mobileStartX;
+        mobilePanY = e.touches[0].clientY - mobileStartY;
+        
+        // Giới hạn biên pan
+        const maxPanX = (pagesWrapper.offsetWidth * (mobileScale - 1)) / 2 + 50;
+        mobilePanX = Math.max(-maxPanX, Math.min(maxPanX, mobilePanX));
+
+        applyMobileTransform();
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    scrollContainer.addEventListener("touchend", (e) => {
+      if (e.touches.length < 2) {
+        isPinching = false;
+      }
+      if (mobileScale < 1.05) {
+        resetMobileZoom();
+      }
+    });
+
+    // ==========================================
+    // ĐIỀU HƯỚNG & PHÍM TẮT
+    // ==========================================
     function scrollToTop() {
       document.getElementById("reader-scroll-container").scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -976,9 +1164,6 @@
       }
     }
 
-    // ==========================================
-    // POPUP CHUYỂN CHAPTER NHANH
-    // ==========================================
     function openChapModal() {
       if (!bookChapters.length) return;
       const readList = getReadChapters(selectedBook.id);
@@ -1008,6 +1193,7 @@
 
     function backToDetail() {
       currentSessionId++;
+      resetMobileZoom();
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
@@ -1023,6 +1209,7 @@
 
     function backToShelf() {
       currentSessionId++;
+      resetMobileZoom();
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
@@ -1035,7 +1222,6 @@
       selectedBook = null;
     }
 
-    // Phím tắt bàn phím
     window.addEventListener("keydown", (e) => {
       if (document.getElementById("reader-view").style.display === "flex") {
         if (e.key === "ArrowLeft") prevChapter();
