@@ -4,10 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Truyện Tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Gốc Siêu Nét</title>
-  
-  <!-- PDF.js Engine & Mozilla PDF Web Component -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/pdfjs-viewer-element"></script>
 
   <style>
     :root {
@@ -375,7 +371,7 @@
     }
 
     /* ==========================================================
-       GIAO DIỆN 3: TRÌNH ĐỌC PDF CHUYÊN NGHIỆP (GIỐNG SMALLPDF)
+       GIAO DIỆN 3: TRÌNH ĐỌC PDF GỐC (NATIVE VIEWER)
        ========================================================== */
     #reader-view {
       display: none;
@@ -390,7 +386,7 @@
       overflow: hidden;
     }
 
-    /* THANH CÔNG CỤ ĐIỀU HƯỚNG CAO CẤP */
+    /* THANH CÔNG CỤ ĐIỀU HƯỚNG GỌN GÀNG */
     .reader-toolbar {
       position: relative;
       flex-shrink: 0;
@@ -401,7 +397,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 0.8rem;
+      padding: 0 1rem;
       gap: 0.6rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.6);
       z-index: 110;
@@ -413,32 +409,24 @@
       gap: 0.5rem;
     }
 
-    .view-mode-toggle {
-      display: flex;
-      align-items: center;
-      background: #0b111c;
-      padding: 2px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    .view-mode-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      padding: 0.32rem 0.65rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
+    .doc-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
-      transition: all 0.2s;
-    }
-    .view-mode-btn.active {
-      background: var(--accent);
-      color: #041021;
+      gap: 0.4rem;
+      background: #0b111c;
+      padding: 0.35rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
       font-weight: 700;
+      color: var(--accent);
+    }
+    .doc-badge span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
     }
 
     /* KHUNG CHỨA TRÌNH ĐỌC NATIVE (100% GỐC TỪ FILE PDF) */
@@ -457,62 +445,6 @@
       border: none;
       display: block;
       background: #1a1e24;
-    }
-
-    /* KHUNG CHỨA TRÌNH ĐỌC MOZILLA WEB COMPONENT (SMALLPDF STYLE) */
-    #mozilla-viewer-container {
-      display: none;
-      width: 100%;
-      height: calc(100vh - 52px);
-      height: calc(100dvh - 52px);
-      position: relative;
-      background: #080c14;
-    }
-    pdfjs-viewer-element {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    /* KHUNG CHỨA CHẾ ĐỘ CUỘN DỌC TỐI ƯU SIÊU NÉT (HIGH-RES CONTINUOUS SCROLLER) */
-    #webtoon-viewer-container {
-      display: none;
-      flex: 1;
-      width: 100%;
-      height: calc(100vh - 52px);
-      height: calc(100dvh - 52px);
-      overflow-y: auto;
-      overflow-x: auto;
-      background: #060911;
-      padding: 1rem 0 4rem 0;
-      -webkit-overflow-scrolling: touch;
-    }
-    .webtoon-scroll-wrapper {
-      width: 100%;
-      max-width: 960px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      padding: 0 0.5rem;
-    }
-    .webtoon-page-box {
-      width: 100%;
-      background: #0f1624;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-      border-radius: 4px;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 250px;
-    }
-    .webtoon-page-box canvas {
-      display: block;
-      width: 100%;
-      height: auto;
-      image-rendering: auto;
     }
 
     /* MODAL CHỌN NHANH TẬP */
@@ -581,7 +513,7 @@
         padding: 0 0.5rem;
         gap: 0.4rem;
       }
-      .toolbar-center { display: none; } /* Thu gọn bớt chữ ở màn hình nhỏ */
+      .toolbar-center { display: none; }
       .btn { padding: 0.4rem 0.6rem; font-size: 0.78rem; }
     }
   </style>
@@ -657,7 +589,7 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC CHUYÊN NGHIỆP GIỐNG SMALLPDF (READER VIEW) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC PDF GỐC (READER VIEW) -->
   <div id="reader-view">
     <!-- THANH ĐIỀU HƯỚNG CỐ ĐỊNH -->
     <div class="reader-toolbar">
@@ -669,18 +601,11 @@
         </button>
       </div>
 
-      <!-- BỘ CHUYỂN ĐỔI CHẾ ĐỘ HIỂN THỊ -->
+      <!-- TRUNG TÂM THANH CÔNG CỤ -->
       <div class="toolbar-center">
-        <div class="view-mode-toggle" title="Chọn cơ chế đọc">
-          <button class="view-mode-btn active" id="btn-mode-native" onclick="switchViewerMode('native')" title="Sử dụng bộ đọc PDF gốc của trình duyệt (Nét 100% gốc không nhòe)">
-            🖥️ Bản PDF Gốc
-          </button>
-          <button class="view-mode-btn" id="btn-mode-mozilla" onclick="switchViewerMode('mozilla')" title="Trình đọc chuyên nghiệp của Mozilla (Tương tự Smallpdf)">
-            📖 Bộ Đọc Toàn Diện
-          </button>
-          <button class="view-mode-btn" id="btn-mode-webtoon" onclick="switchViewerMode('webtoon')" title="Cuộn tranh liên tục từ trên xuống dưới">
-            📜 Cuộn Tranh HD
-          </button>
+        <div class="doc-badge">
+          <span class="dot"></span>
+          <span>Bản PDF Gốc (100% Size)</span>
         </div>
       </div>
 
@@ -693,19 +618,9 @@
       </div>
     </div>
 
-    <!-- 1. CHẾ ĐỘ NATIVE ENGINE: ĐỌC FILE PDF GỐC KHÔNG QUA TRUNG GIAN (NÉT NHẤT TRẦN ĐỜI) -->
+    <!-- KHUNG CHỨA TRÌNH ĐỌC NATIVE (ĐÃ TẮT LỀ TRÁI VÀ MẶC ĐỊNH ZOOM 100%) -->
     <div id="native-viewer-container">
       <iframe id="native-viewer-frame" src="" allowfullscreen></iframe>
-    </div>
-
-    <!-- 2. CHẾ ĐỘ MOZILLA VIEWER: ĐẦY ĐỦ THANH CÔNG CỤ, SIDEBAR THUMBNAIL NHƯ SMALLPDF -->
-    <div id="mozilla-viewer-container">
-      <pdfjs-viewer-element id="mozilla-pdf-element" src="" viewer-css-theme="DARK" pagemode="thumbs"></pdfjs-viewer-element>
-    </div>
-
-    <!-- 3. CHẾ ĐỘ CUỘN TRANH WEBTOON HD -->
-    <div id="webtoon-viewer-container">
-      <div class="webtoon-scroll-wrapper" id="webtoon-scroll-wrapper"></div>
     </div>
   </div>
 
@@ -796,12 +711,6 @@
     };
 
     let currentChapIndex = 0;
-    let currentViewerMode = 'native'; // 'native' | 'mozilla' | 'webtoon'
-    let webtoonObserver = null;
-    let webtoonDoc = null;
-
-    // Cấu hình PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
     // Quản lý LocalStorage
     function getReadList() {
@@ -919,7 +828,7 @@
     }
 
     /* ==========================================================
-       3. BẮT ĐẦU ĐỌC VỚI CƠ CHẾ NATIVE PDF READER ĐẲNG CẤP
+       3. BẮT ĐẦU ĐỌC VỚI CƠ CHẾ NATIVE PDF READER (100% SIZE, TẮT LỀ TRÁI)
        ========================================================== */
     function startReadingChapter(chapIdx = 0) {
       if (!COMIC_DATA.chapters[chapIdx]) return;
@@ -934,171 +843,24 @@
       document.getElementById("reader-view").style.display = "flex";
       document.getElementById("current-chap-label").innerText = chap.title;
 
-      // Nút mở trực tiếp
+      const encodedUrl = encodeURI(chap.file);
+
+      // Nút mở trực tiếp tab mới
       const directBtn = document.getElementById("btn-open-direct");
-      directBtn.href = encodeURI(chap.file);
+      directBtn.href = encodedUrl;
 
-      // Tự động nhận diện thiết bị:
-      // Trên PC (như Cốc Cốc, Chrome): 'native' là lựa chọn NÉT NHẤT TUYỆT ĐỐI (PDFium Engine)
-      // Trên Mobile nếu không hỗ trợ iframe PDF: tự động chuyển sang mozilla/webtoon
-      const isMobile = window.innerWidth <= 768;
-      if (isMobile && currentViewerMode === 'native') {
-        // Trên điện thoại, ưu tiên chế độ Mozilla hoặc Webtoon để hiển thị tiện lợi nhất
-        currentViewerMode = 'mozilla';
-      }
+      // CẤU HÌNH THAM SỐ PDF:
+      // #navpanes=0: Tắt hoàn toàn thanh thumbnails lề bên trái
+      // #pagemode=none: Không bật bảng điều khiển bookmark / thumbnail nào
+      // #zoom=100: Kích thước hiển thị mặc định 100% nguyên bản
+      const nativeFrame = document.getElementById("native-viewer-frame");
+      nativeFrame.src = `${encodedUrl}#navpanes=0&pagemode=none&zoom=100`;
 
-      loadChapterWithCurrentMode();
       markAsRead(chapIdx);
     }
 
-    function loadChapterWithCurrentMode() {
-      const chap = COMIC_DATA.chapters[currentChapIndex];
-      const encodedUrl = encodeURI(chap.file);
-
-      // Cập nhật trạng thái nút chọn chế độ
-      document.getElementById("btn-mode-native").classList.toggle("active", currentViewerMode === 'native');
-      document.getElementById("btn-mode-mozilla").classList.toggle("active", currentViewerMode === 'mozilla');
-      document.getElementById("btn-mode-webtoon").classList.toggle("active", currentViewerMode === 'webtoon');
-
-      // Ẩn tất cả các container trước
-      document.getElementById("native-viewer-container").style.display = "none";
-      document.getElementById("mozilla-viewer-container").style.display = "none";
-      document.getElementById("webtoon-viewer-container").style.display = "none";
-
-      if (currentViewerMode === 'native') {
-        // CHẾ ĐỘ 1: BỘ ĐỌC GỐC CỦA TRÌNH DUYỆT (CỐC CỐC / CHROME / SAFARI)
-        // Đây là cách hiển thị 100% BIT-FOR-BIT KHÔNG MẤT NÉT NGUYÊN BẢN
-        const nativeContainer = document.getElementById("native-viewer-container");
-        const nativeFrame = document.getElementById("native-viewer-frame");
-        nativeContainer.style.display = "flex";
-        // Kèm các tham số xem trang đầy đủ (toolbar, navpanes, fit width)
-        nativeFrame.src = `${encodedUrl}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`;
-
-      } else if (currentViewerMode === 'mozilla') {
-        // CHẾ ĐỘ 2: TRÌNH ĐỌC CHUYÊN NGHIỆP MOZILLA (GIỐNG SMALLPDF)
-        const mozillaContainer = document.getElementById("mozilla-viewer-container");
-        const mozillaElement = document.getElementById("mozilla-pdf-element");
-        mozillaContainer.style.display = "block";
-        mozillaElement.setAttribute('src', encodedUrl);
-
-      } else if (currentViewerMode === 'webtoon') {
-        // CHẾ ĐỘ 3: CUỘN TRANH LIÊN TỤC SIÊU NÉT (HIGH-RES RENDER)
-        const webtoonContainer = document.getElementById("webtoon-viewer-container");
-        webtoonContainer.style.display = "block";
-        loadWebtoonMode(encodedUrl);
-      }
-    }
-
-    function switchViewerMode(mode) {
-      currentViewerMode = mode;
-      loadChapterWithCurrentMode();
-    }
-
     /* ==========================================================
-       4. BỘ DỰNG HÌNH CHẾ ĐỘ CUỘN TRANH WEBTOON SIÊU NÉT
-       ========================================================== */
-    async function loadWebtoonMode(pdfUrl) {
-      const wrapper = document.getElementById("webtoon-scroll-wrapper");
-      wrapper.innerHTML = "<div style='color: var(--accent); padding: 2rem;'>⏳ Đang tải trang truyện độ nét cao...</div>";
-
-      if (webtoonObserver) {
-        webtoonObserver.disconnect();
-      }
-
-      try {
-        const loadingTask = pdfjsLib.getDocument({
-          url: pdfUrl,
-          cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
-          cMapPacked: true,
-          standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/"
-        });
-
-        webtoonDoc = await loadingTask.promise;
-        const total = webtoonDoc.numPages;
-        wrapper.innerHTML = "";
-
-        const page1 = await webtoonDoc.getPage(1);
-        const vp1 = page1.getViewport({ scale: 1.0 });
-
-        for (let p = 1; p <= total; p++) {
-          const box = document.createElement("div");
-          box.className = "webtoon-page-box";
-          box.dataset.page = p;
-          box.dataset.rendered = "false";
-          box.style.aspectRatio = `${vp1.width} / ${vp1.height}`;
-          box.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">Trang ${p}</div>`;
-          wrapper.appendChild(box);
-        }
-
-        webtoonObserver = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              const el = entry.target;
-              if (el.dataset.rendered === "false") {
-                el.dataset.rendered = "true";
-                renderWebtoonPage(parseInt(el.dataset.page), el);
-              }
-            }
-          });
-        }, {
-          root: document.getElementById("webtoon-viewer-container"),
-          rootMargin: "800px 0px"
-        });
-
-        wrapper.querySelectorAll(".webtoon-page-box").forEach(box => {
-          webtoonObserver.observe(box);
-        });
-
-      } catch (err) {
-        wrapper.innerHTML = `<div style="color: #ef4444; padding: 2rem;">Lỗi tải truyện: ${err.message}</div>`;
-      }
-    }
-
-    async function renderWebtoonPage(pageNum, container) {
-      if (!webtoonDoc) return;
-      try {
-        const page = await webtoonDoc.getPage(pageNum);
-        const baseVp = page.getViewport({ scale: 1.0 });
-
-        // Tính tỷ lệ hiển thị chuẩn không bị mờ
-        const clientWidth = container.clientWidth || 960;
-        const displayScale = clientWidth / baseVp.width;
-        const viewport = page.getViewport({ scale: displayScale });
-
-        // Tận dụng Device Pixel Ratio phần cứng
-        const dpr = window.devicePixelRatio || 1;
-        const outputScale = Math.min(Math.max(dpr, 2.0), 3.0);
-
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-        canvas.style.width = "100%";
-        canvas.style.height = "auto";
-
-        const ctx = canvas.getContext("2d", { alpha: false });
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-
-        const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
-
-        await page.render({
-          canvasContext: ctx,
-          viewport: viewport,
-          transform: transform
-        }).promise;
-
-        container.innerHTML = "";
-        container.appendChild(canvas);
-        container.style.aspectRatio = "";
-        container.dataset.rendered = "true";
-
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    /* ==========================================================
-       5. ĐIỀU HƯỚNG VÀ POPUP
+       4. ĐIỀU HƯỚNG VÀ POPUP
        ========================================================== */
     function prevChapter() {
       if (currentChapIndex > 0) startReadingChapter(currentChapIndex - 1);
@@ -1141,7 +903,6 @@
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
       document.getElementById("reader-view").style.display = "none";
-      // Xóa nguồn iframe để tiết kiệm tài nguyên
       document.getElementById("native-viewer-frame").src = "";
       openDetail();
     }
