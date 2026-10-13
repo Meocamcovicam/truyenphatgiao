@@ -50,6 +50,12 @@
     }
     header h1:hover { opacity: 0.8; text-decoration: underline; }
     
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
     /* GIAO DIỆN 1: KỆ SÁCH */
     #shelf-view {
       padding: 1.5rem;
@@ -64,6 +70,23 @@
       gap: 1.2rem;
       margin-top: 1.2rem;
     }
+    
+    /* HIỆU ỨNG XUẤT HIỆN TỪNG TRUYỆN MỘT (STAGGERED) */
+    @keyframes cardFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .book-card-animated {
+      opacity: 0;
+      animation: cardFadeIn 0.35s ease-out forwards;
+    }
+
     .book-card {
       background: var(--card-bg);
       border-radius: 12px;
@@ -118,6 +141,35 @@
       color: var(--text-muted);
       margin-top: auto;
     }
+
+    /* KHUNG XƯƠNG GIỮ CHỖ (SKELETON CARDS) */
+    @keyframes skeletonPulse {
+      0%, 100% { opacity: 0.55; }
+      50% { opacity: 0.25; }
+    }
+    .skeleton-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 0.85rem;
+      border: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      animation: skeletonPulse 1.4s ease-in-out infinite;
+    }
+    .skeleton-cover {
+      height: 230px;
+      background: #0d1525;
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+      border: 1px solid #334155;
+    }
+    .skeleton-line {
+      height: 12px;
+      background: #334155;
+      border-radius: 4px;
+      margin-bottom: 0.45rem;
+    }
+    .skeleton-line.short { width: 45%; }
 
     /* GIAO DIỆN 2: CHI TIẾT TRUYỆN */
     #detail-view {
@@ -326,7 +378,7 @@
     }
     .btn-icon:hover { background: #475569; }
 
-    /* VÙNG CUỘN ĐỌC DỌC & CẢM ỨNG ZOOM 2 NGÓN */
+    /* VÙNG CUỘN ĐỌC DỌC & CẢM ỨNG PINCH-TO-ZOOM */
     #reader-scroll-container {
       flex: 1;
       overflow-y: auto;
@@ -505,7 +557,10 @@
 
   <header id="main-header">
     <h1 onclick="backToShelf()" title="Bấm để quay về danh mục sách">Tủ Sách Trực Tuyến</h1>
-    <div id="status-tag" style="font-size: 0.8rem; color: var(--text-muted);">Đang kết nối...</div>
+    <div class="header-actions">
+      <div id="status-tag" style="font-size: 0.8rem; color: var(--text-muted);">Đang tải...</div>
+      <button class="btn btn-icon" onclick="forceRefreshShelf()" title="Quét đồng bộ lại từ Google Drive">🔄</button>
+    </div>
   </header>
 
   <!-- MÀN HÌNH 1: KỆ SÁCH -->
@@ -513,18 +568,6 @@
     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
       <h2>Danh mục truyện tranh</h2>
       <span id="file-counter" style="color: var(--text-muted); font-size: 0.9rem;"></span>
-    </div>
-
-    <div id="loading-shelf" style="display: flex; justify-content: center; padding: 3rem 1rem;">
-      <div class="progress-box">
-        <div class="progress-header">
-          <span id="shelf-prog-text">Đang đồng bộ Google Drive...</span>
-          <span id="shelf-prog-pct" style="color: var(--accent);">0%</span>
-        </div>
-        <div class="progress-track">
-          <div id="shelf-prog-bar" class="progress-fill"></div>
-        </div>
-      </div>
     </div>
 
     <div id="shelf-grid" class="grid"></div>
@@ -648,9 +691,9 @@
     let lastTapTime = 0;
     let isPinching = false;
 
-    // Bộ nhớ đệm Memory & Quản lý Request đang chạy (Deduplication)
+    // Bộ nhớ đệm Memory & Request Deduplication
     const memoryPdfCache = new Map();
-    const activeFetches = new Map(); // Tránh gọi trùng cùng 1 file
+    const activeFetches = new Map();
 
     function openPdfDB() {
       return new Promise((resolve) => {
@@ -692,12 +735,6 @@
       return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
     }
 
-    function setShelfProgress(pct, text) {
-      document.getElementById("shelf-prog-bar").style.width = pct + "%";
-      document.getElementById("shelf-prog-pct").innerText = Math.round(pct) + "%";
-      if (text) document.getElementById("shelf-prog-text").innerText = text;
-    }
-
     function setBookProgress(pct, text) {
       document.getElementById("book-prog-bar").style.width = pct + "%";
       document.getElementById("book-prog-pct").innerText = Math.round(pct) + "%";
@@ -722,38 +759,38 @@
       }
     }
 
-    // 1. TẢI DANH MỤC TRUYỆN
-    async function fetchBookList() {
-      document.getElementById("loading-shelf").style.display = "flex";
-      setShelfProgress(35, "Đang đồng bộ từ Google Drive...");
-      document.getElementById("status-tag").innerText = "Đang kiểm tra Drive...";
-
-      try {
-        const fetchUrl = `${GOOGLE_SCRIPT_URL}?refresh=1&t=${Date.now()}`;
-        const response = await fetch(fetchUrl);
-        const res = await response.json();
-
-        if (!res.success) throw new Error(res.error);
-
-        const books = res.books || [];
-        renderBookGrid(books);
-        
-        document.getElementById("loading-shelf").style.display = "none";
-        document.getElementById("status-tag").innerText = "Đã cập nhật mới nhất";
-
-      } catch (err) {
-        document.getElementById("loading-shelf").innerHTML = `<div style="color:#ef4444; text-align:center;">Lỗi nạp danh mục: ${err.message}</div>`;
+    // ==========================================================
+    // 1. TẢI KỆ SÁCH SIÊU TỐC: CACHE-FIRST & STAGGERED RENDERING
+    // ==========================================================
+    function renderSkeletonCards(count = 8) {
+      const shelfGrid = document.getElementById("shelf-grid");
+      shelfGrid.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        const skeleton = document.createElement("div");
+        skeleton.className = "skeleton-card";
+        skeleton.innerHTML = `
+          <div class="skeleton-cover"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        `;
+        shelfGrid.appendChild(skeleton);
       }
     }
 
-    function renderBookGrid(books) {
+    function renderBookGrid(books, animate = true) {
       document.getElementById("file-counter").innerText = `Tổng cộng: ${books.length} bộ`;
       const shelfGrid = document.getElementById("shelf-grid");
       shelfGrid.innerHTML = "";
 
-      books.forEach(book => {
+      books.forEach((book, idx) => {
         const card = document.createElement("div");
-        card.className = "book-card";
+        card.className = animate ? "book-card book-card-animated" : "book-card";
+        
+        // Hiệu ứng từng truyện xuất hiện nối tiếp nhau (staggered delay)
+        if (animate) {
+          card.style.animationDelay = `${Math.min(idx * 40, 800)}ms`;
+        }
+
         const thumbSrc = book.thumbId ? getDriveImageUrl(book.thumbId, 600) : "";
 
         card.innerHTML = `
@@ -775,12 +812,81 @@
       });
     }
 
-    // TẢI FILE PDF & GIẢI MÃ NATIVE SIÊU TỐC (CHỐNG GỌI TRÙNG LẶP)
+    async function initShelf() {
+      // BƯỚC 1: Kiểm tra xem có dữ liệu đã lưu trong localStorage không
+      const cached = localStorage.getItem("cached_shelf_books");
+      let hasCache = false;
+
+      if (cached) {
+        try {
+          const books = JSON.parse(cached);
+          if (Array.isArray(books) && books.length > 0) {
+            hasCache = true;
+            // HIỆN NGAY LẬP TỨC (0.05 giây) - KHÔNG ĐỢI DRIVE
+            renderBookGrid(books, false);
+            document.getElementById("status-tag").innerText = "Đang kiểm tra cập nhật...";
+          }
+        } catch (e) {}
+      }
+
+      // Nếu là lần đầu mở web (chưa có cache), hiện khung xương Skeleton
+      if (!hasCache) {
+        renderSkeletonCards(8);
+        document.getElementById("status-tag").innerText = "Đang kết nối Drive...";
+      }
+
+      // BƯỚC 2: Chạy nền ngầm kiểm tra cập nhật từ Google Drive
+      fetchBookList(false, hasCache);
+    }
+
+    async function fetchBookList(forceRefresh = false, hasCache = false) {
+      const statusTag = document.getElementById("status-tag");
+      if (forceRefresh) {
+        statusTag.innerText = "Đang quét lại Drive...";
+        renderSkeletonCards(8);
+      }
+
+      try {
+        const fetchUrl = forceRefresh 
+          ? `${GOOGLE_SCRIPT_URL}?refresh=1&t=${Date.now()}` 
+          : `${GOOGLE_SCRIPT_URL}?t=${Date.now()}`;
+
+        const response = await fetch(fetchUrl);
+        const res = await response.json();
+
+        if (!res.success) throw new Error(res.error);
+
+        const books = res.books || [];
+        const oldCache = localStorage.getItem("cached_shelf_books");
+        const newCache = JSON.stringify(books);
+
+        // Lưu vào bộ nhớ cục bộ
+        localStorage.setItem("cached_shelf_books", newCache);
+
+        // Nếu dữ liệu có thay đổi hoặc trước đó chưa có cache, vẽ các truyện xuất hiện lần lượt
+        if (!hasCache || oldCache !== newCache || forceRefresh) {
+          renderBookGrid(books, true);
+        }
+
+        statusTag.innerText = "Đã cập nhật mới nhất";
+
+      } catch (err) {
+        if (!hasCache) {
+          document.getElementById("shelf-grid").innerHTML = `<div style="color:#ef4444; text-align:center; grid-column: 1/-1; padding: 2rem;">Lỗi nạp danh mục: ${err.message}</div>`;
+        }
+        statusTag.innerText = "Không thể đồng bộ Drive";
+      }
+    }
+
+    function forceRefreshShelf() {
+      fetchBookList(true, false);
+    }
+
+    // TẢI FILE PDF & GIẢI MÃ NATIVE SIÊU TỐC
     async function fetchAndCachePdf(pdfId) {
       let cached = await getStoredPdf(pdfId);
       if (cached) return cached;
 
-      // Nếu đang có request tải file này rồi -> dùng chung kết quả, không gọi thêm
       if (activeFetches.has(pdfId)) {
         return activeFetches.get(pdfId);
       }
@@ -790,8 +896,6 @@
           const res = await fetch(`${GOOGLE_SCRIPT_URL}?pdfId=${pdfId}`);
           const data = await res.json();
           if (data.success && data.data) {
-            // GIẢI MÃ BẰNG NATIVE C++ ENGINE CỦA BROWSER QUA DATA URL
-            // Nhanh hơn 70 lần so với vòng lặp charCodeAt truyền thống
             const resBlob = await fetch("data:application/pdf;base64," + data.data);
             const arrayBuf = await resBlob.arrayBuffer();
             const uint8 = new Uint8Array(arrayBuf);
@@ -800,7 +904,7 @@
             return uint8;
           }
         } catch (e) {
-          console.warn("Lỗi tải PDF ngầm:", e);
+          console.warn("Lỗi tải PDF:", e);
         } finally {
           activeFetches.delete(pdfId);
         }
@@ -811,13 +915,12 @@
       return fetchPromise;
     }
 
-    // TẢI TRƯỚC TUẦN TỰ (TRÁNH GÂY NGHẼN BĂNG THÔNG GOOGLE)
     async function prefetchSequentially(chaps) {
       for (const chap of chaps) {
         if (!chap) continue;
         const exists = await getStoredPdf(chap.id);
         if (!exists) {
-          await fetchAndCachePdf(chap.id); // Chờ xong chap này mới tải chap tiếp
+          await fetchAndCachePdf(chap.id);
         }
       }
     }
@@ -857,7 +960,7 @@
           }
           renderDetailChapGrid(book.id, bookChapters);
 
-          // Tải trước ngầm tuần tự Chap 1 rồi đến Chap 2
+          // Tải trước ngầm tuần tự Chap 1 rồi Chap 2
           prefetchSequentially([bookChapters[0], bookChapters[1]]);
         }
       } catch (e) {
@@ -931,7 +1034,6 @@
         const page1 = await currentPdfDoc.getPage(1);
         const vp1 = page1.getViewport({ scale: 1.0 });
 
-        // Tạo sẵn khung placeholder cho toàn bộ các trang
         for (let p = 1; p <= currentNumPages; p++) {
           const container = document.createElement("div");
           container.className = "pdf-page-container";
@@ -947,7 +1049,6 @@
           wrapper.appendChild(container);
         }
 
-        // Lazy load render khi cuộn
         pageObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -980,7 +1081,7 @@
           scrollTrackerObserver.observe(c);
         });
 
-        // Vẽ ngay trang 1 rồi tắt ngay overlay
+        // Vẽ ngay trang 1 rồi tắt overlay
         const firstPageEl = allContainers[0];
         if (firstPageEl) {
           firstPageEl.dataset.rendered = "true";
@@ -1007,7 +1108,6 @@
       }
     }
 
-    // VẼ TRANG SẮC NÉT & TỐI ƯU HIỆU NĂNG
     async function renderSinglePage(pageNum, container) {
       if (!currentPdfDoc) return;
       try {
@@ -1043,7 +1143,7 @@
     }
 
     // ==========================================
-    // 4. XỬ LÝ ZOOM PC (SLIDER RỘNG KHUNG ĐỌC)
+    // 4. ZOOM PC
     // ==========================================
     function applyPcZoom(val) {
       pcZoomPercent = Math.max(60, Math.min(180, parseInt(val)));
@@ -1067,7 +1167,7 @@
     }
 
     // ==========================================
-    // 5. XỬ LÝ PINCH-TO-ZOOM 2 NGÓN TRÊN MOBILE
+    // 5. PINCH-TO-ZOOM MOBILE
     // ==========================================
     const scrollContainer = document.getElementById("reader-scroll-container");
     const pagesWrapper = document.getElementById("scroll-pages-wrapper");
@@ -1237,7 +1337,7 @@
       }
     });
 
-    window.addEventListener("DOMContentLoaded", fetchBookList);
+    window.addEventListener("DOMContentLoaded", initShelf);
   </script>
 </body>
 </html>
