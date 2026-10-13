@@ -459,7 +459,7 @@
       display: block;
       width: 100% !important;
       height: auto !important;
-      image-rendering: auto; /* Chuẩn khử răng cưa mượt mà */
+      image-rendering: auto; /* Giữ thuật toán nội suy mượt mà, không vỡ hạt */
     }
     .page-loading-skeleton {
       color: #64748b;
@@ -824,7 +824,7 @@
       return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
     }
 
-    // CHẶN HOÀN TOÀN CỬ CHỈ 2 NGÓN TAY CỦA TRÌNH DUYỆT ĐỂ KHÔNG BỊ TRÔI KHUNG
+    // CHẶN CỬ CHỈ 2 NGÓN TAY CỦA TRÌNH DUYỆT ĐỂ KHÔNG BỊ TRÔI KHUNG
     const readerViewEl = document.getElementById("reader-view");
     
     readerViewEl.addEventListener("touchstart", (e) => {
@@ -1142,7 +1142,7 @@
     }
 
     // ==========================================================
-    // 3. MỞ ĐỌC DẠNG CUỘN DỌC - CHẤT LƯỢNG CAO NHẤT
+    // 3. MỞ ĐỌC DẠNG CUỘN DỌC - NẠP ĐẦY ĐỦ CMAP VÀ FONT CHUẨN
     // ==========================================================
     async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook || !bookChapters[chapIdx]) return;
@@ -1157,7 +1157,7 @@
 
       const chapFile = bookChapters[chapIdx];
 
-      // KHÓA CUỘN HOÀN TOÀN TRÊN CẢ HTML VÀ BODY
+      // KHÓA CUỘN NGOÀI BODY
       document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
       document.getElementById("main-header").style.display = "none";
@@ -1194,12 +1194,18 @@
         if (sessionId !== currentSessionId) return;
         if (!pdfBytes) throw new Error("Không thể tải file PDF Chap.");
 
-        setBookProgress(68, "Khởi tạo công cụ đọc...", "Giai đoạn 2/4: Phân tích cấu trúc tệp PDF");
+        setBookProgress(68, "Khởi tạo công cụ đọc...", "Giai đoạn 2/4: Nạp CMap và Font chuẩn");
         await yieldFrame();
 
-        currentPdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+        // NẠP ĐẦY ĐỦ CMAP VÀ STANDARD FONTS ĐỂ RENDER CHỮ TIẾNG VIỆT VECTOR SẮC NÉT
+        currentPdfDoc = await pdfjsLib.getDocument({
+          data: pdfBytes,
+          cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
+          cMapPacked: true,
+          standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/"
+        }).promise;
+        
         currentNumPages = currentPdfDoc.numPages;
-
         if (currentNumPages === 0) throw new Error("File PDF rỗng.");
 
         document.getElementById("current-page").innerText = "1";
@@ -1290,7 +1296,9 @@
       }
     }
 
-    // VẼ TRANG VỚI ĐỘ NÉT GỐC TỐI ĐA (ULTRA-HD RESOLUTION)
+    // ==========================================================
+    // VẼ TRANG VỚI ĐỘ NÉT GỐC 300 DPI CHUẨN IN ẤN (ULTRA-HD)
+    // ==========================================================
     async function renderSinglePage(pageNum, container) {
       if (!currentPdfDoc) return;
 
@@ -1307,15 +1315,16 @@
         const isMobile = window.innerWidth <= 768;
         const containerWidth = container.clientWidth || (isMobile ? window.innerWidth : BASE_READER_WIDTH);
 
-        // ĐỘ PHÂN GIẢI ULTRA-HD: TỐI THIỂU 2600PX, TỐI ĐA 3600PX
-        // GIỮ NGUYÊN 100% ĐỘ NÉT CỦA FILE PDF GỐC, KHÔNG BỊ CO NHỎ
+        // ĐỘ PHÂN GIẢI NÉT GỐC (300 DPI TƯƠNG ĐƯƠNG ~4.16X SCALE)
+        // Chiều rộng pixel vẽ tối thiểu 2800px để chữ và tranh không bị vỡ hạt như file gốc
+        const zoomFactor = currentZoomPercent / 100;
         const targetPixelWidth = Math.min(
           Math.max(
-            Math.round(containerWidth * Math.max(dpr, 2.5) * (currentZoomPercent / 100)),
-            Math.round(baseVp.width * 3.5),
-            2600
+            Math.round(containerWidth * Math.max(dpr, 2.5) * zoomFactor),
+            Math.round(baseVp.width * 3.8 * zoomFactor),
+            2800
           ),
-          3600
+          3840 // Giới hạn an toàn 4K UHD chống tràn RAM
         );
 
         const scale = targetPixelWidth / baseVp.width;
@@ -1338,6 +1347,8 @@
           alpha: false,
           willReadFrequently: false 
         });
+        
+        // BẬT BỘ LỌC KHỬ RĂNG CƯA CHẤT LƯỢNG CAO NHẤT
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
 
@@ -1383,7 +1394,6 @@
       document.documentElement.style.setProperty('--reader-max-width', `${targetWidth}px`);
       document.documentElement.style.setProperty('--reader-width', `${targetWidth}px`);
 
-      // Tự động render lại trang sau 250ms để cập nhật độ nét tương ứng với tỉ lệ zoom mới
       clearTimeout(zoomDebounceTimer);
       zoomDebounceTimer = setTimeout(() => {
         reRenderVisiblePages();
