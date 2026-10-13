@@ -3,29 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tủ Sách Điện Tử - Webtoon PDF Reader</title>
+  <title>Truyện Tranh A Di Đà Kinh - Đọc Trực Tuyến</title>
   
   <!-- PDF.js Engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
+      --bg: #090e17;
+      --card-bg: #131d2e;
+      --card-hover: #1c2a42;
+      --border: #23354d;
       --accent: #38bdf8;
-      --accent-hover: #0284c7;
+      --accent-hover: #0ea5e9;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --gold: #f59e0b;
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --reader-max-width: 820px;
       --reader-width: 100%;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%;
       height: 100%;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       display: flex;
@@ -33,84 +38,154 @@
       overflow-x: hidden;
       -webkit-tap-highlight-color: transparent;
     }
+
+    /* HEADER */
     header {
-      height: 50px;
+      height: 54px;
       padding: 0 1.2rem;
-      background: rgba(30, 41, 59, 0.95);
-      backdrop-filter: blur(8px);
+      background: rgba(19, 29, 46, 0.95);
+      backdrop-filter: blur(12px);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #334155;
-      z-index: 20;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
     }
-    header h1 { 
-      font-size: 1.15rem; 
-      font-weight: 600; 
-      color: var(--accent); 
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
       cursor: pointer;
       user-select: none;
-      transition: opacity 0.2s;
     }
-    header h1:hover { opacity: 0.8; text-decoration: underline; }
-    
+    .header-logo span.icon {
+      font-size: 1.3rem;
+    }
+    .header-logo h1 { 
+      font-size: 1.05rem; 
+      font-weight: 700; 
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .header-logo h1 span {
+      color: var(--gold);
+    }
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.6rem;
     }
 
-    /* GIAO DIỆN 1: KỆ SÁCH */
+    /* BUTTONS */
+    .btn {
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: #2b3950;
+      border-color: #3b506e;
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #041021;
+      border: none;
+      font-weight: 700;
+      box-shadow: 0 3px 12px var(--accent-glow);
+    }
+    .btn-accent:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 5px 18px rgba(56, 189, 248, 0.4);
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #1e1101;
+      border: none;
+      font-weight: 700;
+      box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3);
+    }
+    .btn-gold:hover {
+      filter: brightness(1.1);
+    }
+    .btn-icon {
+      padding: 0.3rem 0.55rem;
+      border-radius: 6px;
+    }
+
+    /* ==========================================================
+       GIAO DIỆN 1: KỆ SÁCH (SHELF VIEW)
+       ========================================================== */
     #shelf-view {
-      padding: 1.5rem;
+      padding: 1.8rem 1.2rem;
       max-width: 1200px;
       margin: 0 auto;
       width: 100%;
       flex: 1;
     }
+    .shelf-header {
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.8rem;
+    }
+    .shelf-header h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .shelf-header p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+    }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1.2rem;
-      margin-top: 1.2rem;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 1.5rem;
     }
-    
-    @keyframes cardFadeIn {
-      from { opacity: 0; transform: translateY(14px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .book-card-animated {
-      opacity: 0;
-      animation: cardFadeIn 0.35s ease-out forwards;
-    }
-
     .book-card {
       background: var(--card-bg);
-      border-radius: 12px;
-      padding: 0.85rem;
+      border-radius: 14px;
+      padding: 0.9rem;
       display: flex;
       flex-direction: column;
-      border: 1px solid #334155;
-      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid var(--border);
+      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
       cursor: pointer;
+      position: relative;
     }
     .book-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+      transform: translateY(-5px);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.5), 0 0 15px var(--accent-glow);
       border-color: var(--accent);
     }
-    
     .book-cover {
-      height: 230px;
-      background: #090e1a;
-      border-radius: 8px;
+      width: 100%;
+      height: 290px;
+      background: #060a12;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.85rem;
       overflow: hidden;
       position: relative;
-      border: 1px solid #334155;
+      border: 1px solid var(--border);
     }
     .cover-img {
       width: 100%;
@@ -118,61 +193,46 @@
       object-fit: cover;
       object-position: top center;
       display: block;
-      transition: transform 0.3s ease;
+      transition: transform 0.35s ease;
     }
-    .book-card:hover .cover-img { transform: scale(1.04); }
-
+    .book-card:hover .cover-img { 
+      transform: scale(1.05); 
+    }
     .book-title {
-      font-size: 0.9rem;
-      font-weight: 600;
+      font-size: 0.96rem;
+      font-weight: 700;
       line-height: 1.4;
       margin-bottom: 0.4rem;
-      word-break: break-word;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      color: var(--text);
     }
-    .book-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: auto;
-    }
-
-    /* SKELETON CARDS */
-    @keyframes skeletonPulse {
-      0%, 100% { opacity: 0.55; }
-      50% { opacity: 0.25; }
-    }
-    .skeleton-card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 0.85rem;
-      border: 1px solid #334155;
+    .book-badge-row {
       display: flex;
-      flex-direction: column;
-      animation: skeletonPulse 1.4s ease-in-out infinite;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-top: auto;
+      padding-top: 0.5rem;
     }
-    .skeleton-cover {
-      height: 230px;
-      background: #0d1525;
-      border-radius: 8px;
-      margin-bottom: 0.8rem;
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
+      background: #1e293b;
+      color: var(--accent);
       border: 1px solid #334155;
     }
-    .skeleton-line {
-      height: 12px;
-      background: #334155;
-      border-radius: 4px;
-      margin-bottom: 0.45rem;
+    .badge-gold {
+      color: var(--gold);
+      border-color: rgba(245, 158, 11, 0.4);
     }
-    .skeleton-line.short { width: 45%; }
 
-    /* GIAO DIỆN 2: CHI TIẾT TRUYỆN */
+    /* ==========================================================
+       GIAO DIỆN 2: CHI TIẾT TRUYỆN (DETAIL VIEW)
+       ========================================================== */
     #detail-view {
       display: none;
-      padding: 1.5rem;
-      max-width: 950px;
+      padding: 1.5rem 1.2rem;
+      max-width: 980px;
       margin: 0 auto;
       width: 100%;
       flex: 1;
@@ -182,21 +242,21 @@
     .detail-card {
       background: var(--card-bg);
       border-radius: 16px;
-      border: 1px solid #334155;
-      padding: 1.5rem;
+      border: 1px solid var(--border);
+      padding: 1.6rem;
       display: flex;
-      gap: 1.8rem;
-      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+      gap: 2rem;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
     }
     .detail-cover-box {
-      width: 220px;
-      min-width: 220px;
-      height: 310px;
+      width: 230px;
+      min-width: 230px;
+      height: 325px;
       border-radius: 12px;
       overflow: hidden;
-      border: 1px solid #475569;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-      background: #090e1a;
+      border: 1px solid #3b506e;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      background: #060a12;
     }
     .detail-cover-box img {
       width: 100%;
@@ -212,211 +272,193 @@
       flex: 1;
     }
     .detail-title {
-      font-size: 1.4rem;
-      font-weight: 700;
+      font-size: 1.55rem;
+      font-weight: 800;
       color: var(--text);
       line-height: 1.35;
+      margin-bottom: 0.6rem;
+    }
+    .detail-sub {
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 0.92rem;
       margin-bottom: 0.8rem;
+    }
+    .detail-desc {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+      margin-bottom: 1.2rem;
     }
     .detail-meta-tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.6rem;
-      margin-bottom: 1.5rem;
+      gap: 0.55rem;
+      margin-bottom: 1.4rem;
     }
-    .meta-tag {
-      background: #334155;
-      color: var(--accent);
-      padding: 0.35rem 0.8rem;
-      border-radius: 6px;
-      font-size: 0.82rem;
-      font-weight: 500;
-    }
-    .btn-read-start {
-      background: linear-gradient(135deg, #0284c7, #38bdf8);
-      color: #0f172a;
-      border: none;
-      padding: 0.8rem 1.8rem;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
-      width: fit-content;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
-    }
-    .btn-read-start:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.08);
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+    .detail-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
     }
 
     .chap-section {
       background: var(--card-bg);
       border-radius: 16px;
-      border: 1px solid #334155;
+      border: 1px solid var(--border);
       padding: 1.5rem;
     }
     .chap-section-header {
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1.12rem;
+      font-weight: 700;
       margin-bottom: 1.2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid var(--border);
       padding-bottom: 0.8rem;
     }
     .chap-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 0.8rem;
     }
     .chap-item {
-      padding: 0.75rem 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #334155;
+      padding: 0.85rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
       text-align: center;
       cursor: pointer;
       font-size: 0.88rem;
       font-weight: 600;
       transition: all 0.2s;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      background: #111a2a;
+    }
+    .chap-item .chap-label {
+      font-weight: 700;
+    }
+    .chap-item .chap-pages {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-weight: 500;
     }
     .chap-item.unread {
-      background: #0284c7;
+      background: #122847;
+      color: #bae6fd;
+      border-color: #0284c7;
+    }
+    .chap-item.unread:hover { 
+      background: #0284c7; 
       color: #ffffff;
-      border-color: #38bdf8;
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 14px var(--accent-glow);
     }
-    .chap-item.unread:hover { background: #0369a1; transform: translateY(-2px); }
+    .chap-item.unread:hover .chap-pages { color: #e0f2fe; }
     .chap-item.read {
-      background: #1e293b;
+      background: #131d2e;
       color: #94a3b8;
-      border-color: #334155;
+      border-color: var(--border);
     }
-    .chap-item.read:hover { background: #334155; color: #ffffff; }
+    .chap-item.read:hover { 
+      background: #1e2c45; 
+      color: #ffffff;
+      border-color: #475569;
+    }
+    .chap-item.active {
+      border-color: var(--gold);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+    }
 
     /* ==========================================================
-       GIAO DIỆN 3: TRÌNH ĐỌC CUỘN DỌC (CỐ ĐỊNH 100% KHUNG HÌNH)
+       GIAO DIỆN 3: TRÌNH ĐỌC CUỘN DỌC (VERTICAL READER)
        ========================================================== */
     #reader-view {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       width: 100vw;
       height: 100vh;
       height: 100dvh;
-      background: #090e17;
+      background: #05080f;
       z-index: 100;
       flex-direction: column;
       overflow: hidden;
       touch-action: pan-x pan-y;
     }
 
-    /* THANH CÔNG CỤ LUÔN CỐ ĐỊNH Ở ĐẦU TRANG */
     .reader-toolbar {
       position: relative;
       flex-shrink: 0;
       width: 100%;
-      background: rgba(15, 23, 42, 0.98);
+      background: rgba(13, 20, 33, 0.96);
       backdrop-filter: blur(12px);
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 0.4rem 0.6rem;
-      gap: 0.4rem;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      padding: 0.45rem 0.8rem;
+      gap: 0.45rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
       z-index: 110;
     }
-
     .toolbar-top-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.5rem;
       width: 100%;
     }
     .toolbar-nav-group {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.4rem;
     }
     .toolbar-bottom-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       width: 100%;
     }
-
-    .btn {
-      background: #334155;
-      color: white;
-      border: none;
-      padding: 0.45rem 0.75rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-      transition: background 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      white-space: nowrap;
-    }
-    .btn:hover { background: #475569; }
-    .btn-accent { background: var(--accent-hover); }
-    .btn-accent:hover { background: #0369a1; }
 
     .zoom-toolbar {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      background: #1e293b;
-      padding: 0.22rem 0.6rem;
+      gap: 0.4rem;
+      background: #111a2b;
+      padding: 0.25rem 0.7rem;
       border-radius: 8px;
-      border: 1px solid #334155;
+      border: 1px solid var(--border);
     }
     .zoom-toolbar input[type="range"] {
-      width: 100px;
+      width: 110px;
       height: 6px;
       accent-color: var(--accent);
       cursor: pointer;
     }
     .zoom-toolbar span {
       font-size: 0.82rem;
-      min-width: 42px;
+      min-width: 44px;
       text-align: center;
       color: var(--accent);
-      font-weight: 600;
+      font-weight: 700;
     }
-    .btn-icon {
-      background: #334155;
-      color: white;
-      border: none;
-      padding: 0.22rem 0.5rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: background 0.2s;
-    }
-    .btn-icon:hover { background: #475569; }
 
     .page-badge {
       font-size: 0.82rem;
+      font-weight: 600;
       color: var(--text);
       white-space: nowrap;
-      background: #1e293b;
-      padding: 0.25rem 0.55rem;
-      border-radius: 6px;
-      border: 1px solid #334155;
+      background: #111a2b;
+      padding: 0.28rem 0.65rem;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+    }
+    .page-badge span {
+      color: var(--accent);
     }
 
     /* VÙNG CUỘN ĐỌC DỌC */
@@ -425,8 +467,8 @@
       min-height: 0;
       overflow-y: auto;
       overflow-x: auto;
-      padding: 0.6rem 0 3rem 0;
-      background: #090e17;
+      padding: 0.8rem 0 3.5rem 0;
+      background: #05080f;
       position: relative;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -441,44 +483,49 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       transition: width 0.15s ease-out, max-width 0.15s ease-out;
     }
 
     .pdf-page-container {
       width: 100%;
       position: relative;
-      background: #111827;
-      box-shadow: 0 5px 18px rgba(0,0,0,0.45);
+      background: #0b111c;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
       overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
+      border-radius: 2px;
     }
     .pdf-page-container canvas {
       display: block;
       width: 100% !important;
       height: auto !important;
-      image-rendering: auto; /* Giữ thuật toán nội suy mượt mà, không vỡ hạt */
     }
     .page-loading-skeleton {
       color: #64748b;
       font-size: 0.85rem;
-      font-weight: 500;
+      font-weight: 600;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 3rem 0;
     }
 
     .end-chap-nav {
       margin-top: 2rem;
-      padding: 1.5rem;
+      padding: 1.5rem 1rem;
       display: flex;
       justify-content: center;
-      gap: 1rem;
+      gap: 0.8rem;
       width: 100%;
       max-width: var(--reader-max-width);
       margin-left: auto;
       margin-right: auto;
-      border-top: 1px solid #334155;
+      border-top: 1px solid var(--border);
     }
 
     /* POPUP CHỌN NHANH CHAP */
@@ -486,44 +533,49 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(6px);
-      z-index: 120;
+      background: rgba(5, 8, 15, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 150;
       align-items: center;
       justify-content: center;
       padding: 1rem;
     }
     .modal-content {
       background: var(--card-bg);
-      border: 1px solid #334155;
-      border-radius: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
       width: 100%;
-      max-width: 550px;
-      max-height: 80vh;
+      max-width: 580px;
+      max-height: 82vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+      box-shadow: 0 25px 40px rgba(0,0,0,0.7);
     }
     .modal-header {
       padding: 1rem 1.2rem;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+    .modal-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
     .modal-body {
-      padding: 1rem;
+      padding: 1.2rem;
       overflow-y: auto;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 0.6rem;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.7rem;
     }
 
-    /* ANIMATION LOADING TIẾN TRÌNH */
+    /* OVERLAY LOADING TIẾN TRÌNH */
     #loading-book-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.96);
+      background: rgba(5, 8, 15, 0.94);
       backdrop-filter: blur(10px);
       z-index: 130;
       display: flex;
@@ -531,7 +583,7 @@
       align-items: center;
       justify-content: center;
       padding: 1.5rem;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
       opacity: 1;
       visibility: visible;
     }
@@ -540,89 +592,65 @@
       visibility: hidden;
       pointer-events: none;
     }
-
     .loader-ring {
       width: 52px;
       height: 52px;
-      border: 3.5px solid rgba(56, 189, 248, 0.15);
+      border: 3.5px solid rgba(56, 189, 248, 0.18);
       border-top: 3.5px solid var(--accent);
       border-right: 3.5px solid var(--accent);
       border-radius: 50%;
       animation: spinLoader 0.75s linear infinite;
       margin-bottom: 1.2rem;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+      box-shadow: 0 0 18px var(--accent-glow);
     }
     @keyframes spinLoader {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
     .progress-box {
       width: 100%;
       max-width: 420px;
-      background: #1e293b;
-      padding: 1.4rem;
-      border-radius: 14px;
-      border: 1px solid #334155;
+      background: #111a2a;
+      padding: 1.3rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
       box-shadow: 0 15px 35px rgba(0,0,0,0.6);
       display: flex;
       flex-direction: column;
-      gap: 0.8rem;
+      gap: 0.75rem;
     }
     .progress-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      font-size: 0.95rem;
-      font-weight: 600;
+      font-size: 0.92rem;
+      font-weight: 700;
     }
     .progress-header-pct {
       font-size: 1.15rem;
       color: var(--accent);
-      font-weight: 700;
     }
     .progress-track {
       width: 100%;
-      height: 9px;
-      background: #0f172a;
+      height: 8px;
+      background: #090e17;
       border-radius: 999px;
       overflow: hidden;
-      border: 1px solid #334155;
-    }
-    @keyframes shimmerMove {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
+      border: 1px solid var(--border);
     }
     .progress-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #0284c7 0%, #38bdf8 45%, #a5f3fc 55%, #38bdf8 65%, #0284c7 100%);
-      background-size: 200% 100%;
-      animation: shimmerMove 1.8s infinite linear;
+      background: linear-gradient(90deg, #0284c7 0%, #38bdf8 50%, #a5f3fc 100%);
       border-radius: 999px;
-      transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.2s ease-out;
     }
     .progress-detail {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .progress-dot {
-      width: 6px;
-      height: 6px;
-      background: var(--accent);
-      border-radius: 50%;
-      display: inline-block;
-      animation: pulseDot 1.2s infinite ease-in-out;
-    }
-    @keyframes pulseDot {
-      0%, 100% { transform: scale(0.8); opacity: 0.5; }
-      50% { transform: scale(1.3); opacity: 1; }
     }
 
-    /* BỐ TRÍ NỀN TẢNG PC & MOBILE */
+    /* DESKTOP & MOBILE RESPONSIVE */
     @media (min-width: 768px) {
       .reader-toolbar {
         flex-direction: row;
@@ -641,7 +669,7 @@
         justify-content: flex-end;
         gap: 0.8rem;
       }
-      .zoom-toolbar input[type="range"] { width: 100px; }
+      .zoom-toolbar input[type="range"] { width: 110px; }
     }
 
     @media (max-width: 767px) {
@@ -650,55 +678,53 @@
         align-items: center;
         text-align: center;
         padding: 1.2rem;
+        gap: 1.2rem;
       }
       .detail-cover-box {
-        width: 180px;
-        min-width: 180px;
-        height: 250px;
+        width: 190px;
+        min-width: 190px;
+        height: 270px;
       }
       .detail-info { align-items: center; }
       .detail-meta-tags { justify-content: center; }
-      .btn-read-start { width: 100%; justify-content: center; }
-      #reader-scroll-container { padding: 0.5rem 0 2rem 0; }
-      .scroll-pages-wrapper { gap: 2px; }
-
-      .btn { padding: 0.35rem 0.55rem; font-size: 0.76rem; }
+      .detail-actions { justify-content: center; width: 100%; }
+      .detail-actions .btn { flex: 1; justify-content: center; }
+      .btn { padding: 0.4rem 0.65rem; font-size: 0.8rem; }
       .zoom-toolbar { width: 100%; justify-content: center; padding: 0.2rem 0.5rem; }
       .zoom-toolbar input[type="range"] { flex: 1; max-width: 180px; }
-      .page-badge { font-size: 0.78rem; padding: 0.2rem 0.45rem; }
-    }
-
-    @media (max-width: 600px) {
-      header { height: 46px; padding: 0 0.8rem; }
-      header h1 { font-size: 1rem; }
-      .book-cover { height: 190px; }
-      .chap-grid, .modal-body { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      .page-badge { font-size: 0.78rem; }
     }
   </style>
 </head>
 <body>
 
+  <!-- HEADER CHÍNH -->
   <header id="main-header">
-    <h1 onclick="backToShelf()" title="Bấm để quay về danh mục sách">Tủ Sách Trực Tuyến</h1>
+    <div class="header-logo" onclick="backToShelf()" title="Về trang chủ kệ sách">
+      <span class="icon">🌸</span>
+      <h1>Kinh Điển <span>Tranh Truyện</span></h1>
+    </div>
     <div class="header-actions">
-      <div id="status-tag" style="font-size: 0.8rem; color: var(--text-muted);">Đang tải...</div>
-      <button class="btn btn-icon" onclick="forceRefreshShelf()" title="Quét đồng bộ lại từ Google Drive">🔄</button>
+      <button class="btn btn-icon" onclick="clearReadingHistory()" title="Xóa lịch sử đã đọc">🗑️ Đặt lại</button>
     </div>
   </header>
 
-  <!-- MÀN HÌNH 1: KỆ SÁCH -->
+  <!-- MÀN HÌNH 1: KỆ SÁCH (SHELF VIEW) -->
   <main id="shelf-view">
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
-      <h2>Danh mục truyện tranh</h2>
-      <span id="file-counter" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+    <div class="shelf-header">
+      <div>
+        <h2>Kệ Truyện Tranh Phật Giáo</h2>
+        <p>Tuyển tập truyện tranh Phật Thuyết A Di Đà Kinh - Bản sắc nét</p>
+      </div>
+      <span id="shelf-stat" style="color: var(--gold); font-size: 0.88rem; font-weight: 600;">1 Bộ truyện (10 Tập)</span>
     </div>
 
     <div id="shelf-grid" class="grid"></div>
   </main>
 
-  <!-- MÀN HÌNH 2: CHI TIẾT TRUYỆN -->
+  <!-- MÀN HÌNH 2: CHI TIẾT TRUYỆN (DETAIL VIEW) -->
   <div id="detail-view">
-    <div style="display: flex; justify-content: flex-start;">
+    <div>
       <button class="btn" onclick="backToShelf()">← Quay lại kệ sách</button>
     </div>
 
@@ -708,52 +734,65 @@
       </div>
       <div class="detail-info">
         <div>
-          <div class="detail-title" id="detail-book-title">Tên truyện</div>
+          <div class="detail-title" id="detail-title">Truyện tranh A Di Đà Kinh</div>
+          <div class="detail-sub">Phật Thuyết A Di Đà Kinh (Amituofojing 网络用)</div>
+          <div class="detail-desc">
+            Trọn bộ truyện tranh minh họa Phật Thuyết A Di Đà Kinh bằng tranh vẽ màu trang nghiêm, sống động. Được chia làm 10 tập (tổng cộng 190 trang) tối ưu cho việc đọc trực tuyến trên cả máy tính và điện thoại di động.
+          </div>
           <div class="detail-meta-tags">
-            <span class="meta-tag" id="detail-chaps-tag">-- Chap</span>
+            <span class="badge badge-gold" id="detail-count-tag">10 Tập (PDF)</span>
+            <span class="badge">190 Trang</span>
+            <span class="badge">Độ nét cao HD</span>
+            <span class="badge" id="detail-progress-tag">Chưa đọc</span>
           </div>
         </div>
         
-        <button class="btn-read-start" onclick="readFromBeginning()">
-          📖 Đọc từ đầu
-        </button>
+        <div class="detail-actions">
+          <button class="btn btn-accent" onclick="readFromBeginning()">
+            📖 Đọc từ đầu (Tập 1)
+          </button>
+          <button class="btn btn-gold" id="btn-continue-read" onclick="continueReading()" style="display: none;">
+            🔖 Tiếp tục đọc (Tập 1)
+          </button>
+        </div>
       </div>
     </div>
 
     <div class="chap-section">
       <div class="chap-section-header">
-        <span>Danh sách Chapter (File PDF)</span>
+        <span>Danh sách các tập (File PDF)</span>
+        <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500;">Bấm vào tập để bắt đầu đọc</span>
       </div>
       <div class="chap-grid" id="detail-chap-grid"></div>
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC CUỘN DỌC -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC CUỘN DỌC (WEBTOON VIEWER) -->
   <div id="reader-view">
-    <!-- THANH MENU & ZOOM LUÔN Ở ĐẦU TRANG -->
+    <!-- THANH ĐIỀU HƯỚNG CỐ ĐỊNH -->
     <div class="reader-toolbar">
       <div class="toolbar-top-row">
         <div class="toolbar-nav-group">
-          <button class="btn" onclick="backToShelf()" title="Về trang chủ kệ sách">🏠 Trang chủ</button>
-          <button class="btn" onclick="backToDetail()" title="Về danh sách chương">📋 Mục lục</button>
+          <button class="btn" onclick="backToShelf()" title="Về trang chủ">🏠 Kệ sách</button>
+          <button class="btn" onclick="backToDetail()" title="Về mục lục tập">📋 Mục lục</button>
         </div>
         
-        <button class="btn btn-accent" onclick="openChapModal()" title="Chuyển nhanh chương">
-          📚 <span id="current-chap-label">Chap 1</span> ▾
+        <button class="btn btn-accent" onclick="openChapModal()" title="Bấm để chọn tập khác">
+          📚 <span id="current-chap-label">Tập 1</span> ▾
         </button>
 
         <div class="page-badge">
-          Trang <span id="current-page">1</span>/<span id="total-pages">1</span>
+          Trang <span id="current-page">1</span> / <span id="total-pages">--</span>
         </div>
       </div>
 
       <div class="toolbar-bottom-row">
         <div class="zoom-toolbar">
-          <button class="btn-icon" onclick="stepZoom(-10)" title="Thu nhỏ">−</button>
+          <button class="btn btn-icon" onclick="stepZoom(-10)" title="Thu nhỏ">−</button>
           <input type="range" id="zoom-slider" min="60" max="220" step="5" value="100" oninput="onZoomSlider(this.value)">
-          <button class="btn-icon" onclick="stepZoom(10)" title="Phóng to">+</button>
+          <button class="btn btn-icon" onclick="stepZoom(10)" title="Phóng to">+</button>
           <span id="zoom-val">100%</span>
-          <button class="btn-icon" onclick="resetZoom()" title="Về 100%">↺</button>
+          <button class="btn btn-icon" onclick="resetZoom()" title="Về 100%">↺</button>
         </div>
       </div>
     </div>
@@ -763,16 +802,13 @@
       <div class="loader-ring"></div>
       <div class="progress-box">
         <div class="progress-header">
-          <span id="book-prog-title">Đang nạp Chap...</span>
+          <span id="book-prog-title">Đang nạp dữ liệu...</span>
           <span id="book-prog-pct" class="progress-header-pct">0%</span>
         </div>
         <div class="progress-track">
           <div id="book-prog-bar" class="progress-fill"></div>
         </div>
-        <div class="progress-detail">
-          <span class="progress-dot"></span>
-          <span id="book-prog-detail">Đang khởi tạo kết nối...</span>
-        </div>
+        <div class="progress-detail" id="book-prog-detail">Khởi tạo công cụ đọc PDF...</div>
       </div>
     </div>
 
@@ -781,18 +817,18 @@
       <div class="scroll-pages-wrapper" id="scroll-pages-wrapper"></div>
       
       <div class="end-chap-nav" id="end-chap-nav" style="display: none;">
-        <button class="btn" id="btn-prev-chap" onclick="prevChapter()">‹ Chap trước</button>
+        <button class="btn" id="btn-prev-chap" onclick="prevChapter()">‹ Tập trước</button>
         <button class="btn" onclick="scrollToTop()">↑ Lên đầu</button>
-        <button class="btn btn-accent" id="btn-next-chap" onclick="nextChapter()">Chap sau ›</button>
+        <button class="btn btn-accent" id="btn-next-chap" onclick="nextChapter()">Tập sau ›</button>
       </div>
     </div>
   </div>
 
-  <!-- POPUP CHỌN CHAPTER NHANH -->
+  <!-- MODAL CHỌN NHANH TẬP -->
   <div id="chap-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 style="font-size: 1rem;">Chuyển nhanh Chapter</h3>
+        <h3>Chuyển nhanh Tập</h3>
         <button class="btn" onclick="closeChapModal()">✕ Đóng</button>
       </div>
       <div class="modal-body" id="modal-chap-grid"></div>
@@ -800,13 +836,89 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOwmO8RSpnp9xgWBCBvBkPyVDmtjtuon9nWWNibD_E8FalOFEf7zRQPeeVVTtrM03D-g/exec";
+    /* ==========================================================
+       CẤU HÌNH DỮ LIỆU ĐƯỜNG DẪN TỆP TIN TỪ REPOSITORY GITHUB
+       Cấu trúc thư mục:
+       PDF/Truyện tranh A Di Đà Kinh/
+       ├── 21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001.png
+       └── 21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001-020.pdf
+           ...
+       ========================================================== */
+    const BASE_FOLDER = "PDF/Truyện tranh A Di Đà Kinh/";
 
+    const COMIC_DATA = {
+      id: "adida_kinh",
+      title: "Truyện tranh A Di Đà Kinh",
+      subTitle: "Phật Thuyết A Di Đà Kinh (Amituofojing 网络用)",
+      cover: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001.png",
+      chapters: [
+        { 
+          id: 1, 
+          title: "Tập 1", 
+          range: "Trang 001 - 020", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001-020.pdf" 
+        },
+        { 
+          id: 2, 
+          title: "Tập 2", 
+          range: "Trang 021 - 040", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-021-040.pdf" 
+        },
+        { 
+          id: 3, 
+          title: "Tập 3", 
+          range: "Trang 041 - 060", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-041-060.pdf" 
+        },
+        { 
+          id: 4, 
+          title: "Tập 4", 
+          range: "Trang 061 - 080", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-061-080.pdf" 
+        },
+        { 
+          id: 5, 
+          title: "Tập 5", 
+          range: "Trang 081 - 100", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-081-100.pdf" 
+        },
+        { 
+          id: 6, 
+          title: "Tập 6", 
+          range: "Trang 101 - 120", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-101-120.pdf" 
+        },
+        { 
+          id: 7, 
+          title: "Tập 7", 
+          range: "Trang 121 - 140", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-121-140.pdf" 
+        },
+        { 
+          id: 8, 
+          title: "Tập 8", 
+          range: "Trang 141 - 160", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-141-160.pdf" 
+        },
+        { 
+          id: 9, 
+          title: "Tập 9", 
+          range: "Trang 161 - 180", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-161-180.pdf" 
+        },
+        { 
+          id: 10, 
+          title: "Tập 10", 
+          range: "Trang 181 - 190", 
+          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-181-190.pdf" 
+        }
+      ]
+    };
+
+    // CẤU HÌNH PDF.JS ENGINE
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
     let currentSessionId = 0;
-    let selectedBook = null;
-    let bookChapters = [];
     let currentChapIndex = 0;
     let currentPdfDoc = null;
     let currentNumPages = 0;
@@ -817,69 +929,35 @@
     const BASE_READER_WIDTH = 820;
     let zoomDebounceTimer = null;
 
-    const memoryPdfCache = new Map();
-    const activeFetches = new Map();
-
-    function yieldFrame() {
-      return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
-    }
-
-    // CHẶN CỬ CHỈ 2 NGÓN TAY CỦA TRÌNH DUYỆT ĐỂ KHÔNG BỊ TRÔI KHUNG
-    const readerViewEl = document.getElementById("reader-view");
-    
-    readerViewEl.addEventListener("touchstart", (e) => {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-
-    readerViewEl.addEventListener("touchmove", (e) => {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-
-    readerViewEl.addEventListener("gesturestart", (e) => e.preventDefault());
-    readerViewEl.addEventListener("gesturechange", (e) => e.preventDefault());
-
-    function openPdfDB() {
-      return new Promise((resolve) => {
-        const req = indexedDB.open("MangaPdfStore_v3", 1);
-        req.onupgradeneeded = (e) => e.target.result.createObjectStore("chap_pdfs");
-        req.onsuccess = (e) => resolve(e.target.result);
-        req.onerror = () => resolve(null);
-      });
-    }
-
-    async function getStoredPdf(pdfId) {
-      if (memoryPdfCache.has(pdfId)) return memoryPdfCache.get(pdfId);
+    // QUẢN LÝ TIẾN TRÌNH ĐỌC (LOCALSTORAGE)
+    function getReadList() {
       try {
-        const db = await openPdfDB();
-        if (!db) return null;
-        return new Promise((resolve) => {
-          const tx = db.transaction("chap_pdfs", "readonly");
-          const req = tx.objectStore("chap_pdfs").get(pdfId);
-          req.onsuccess = () => {
-            if (req.result) memoryPdfCache.set(pdfId, req.result);
-            resolve(req.result || null);
-          };
-          req.onerror = () => resolve(null);
-        });
-      } catch (e) { return null; }
+        const item = localStorage.getItem(`read_list_${COMIC_DATA.id}`);
+        return item ? JSON.parse(item) : [];
+      } catch (e) { return []; }
     }
 
-    async function storePdf(pdfId, uint8Array) {
-      memoryPdfCache.set(pdfId, uint8Array);
-      try {
-        const db = await openPdfDB();
-        if (!db) return;
-        const tx = db.transaction("chap_pdfs", "readwrite");
-        tx.objectStore("chap_pdfs").put(uint8Array, pdfId);
-      } catch (e) {}
+    function markAsRead(idx) {
+      const list = getReadList();
+      if (!list.includes(idx)) {
+        list.push(idx);
+        localStorage.setItem(`read_list_${COMIC_DATA.id}`, JSON.stringify(list));
+      }
+      localStorage.setItem(`last_read_${COMIC_DATA.id}`, idx);
     }
 
-    function getDriveImageUrl(fileId, size = 800) {
-      return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
+    function getLastRead() {
+      const val = localStorage.getItem(`last_read_${COMIC_DATA.id}`);
+      return val !== null ? parseInt(val) : 0;
+    }
+
+    function clearReadingHistory() {
+      if (confirm("Bạn có muốn đặt lại toàn bộ lịch sử đọc của truyện này không?")) {
+        localStorage.removeItem(`read_list_${COMIC_DATA.id}`);
+        localStorage.removeItem(`last_read_${COMIC_DATA.id}`);
+        renderDetailView();
+        alert("Đã đặt lại lịch sử đọc thành công!");
+      }
     }
 
     function setBookProgress(pct, title, detail) {
@@ -894,194 +972,35 @@
       if (detail && detailEl) detailEl.innerText = detail;
     }
 
-    function getReadChapters(bookId) {
-      try {
-        const data = localStorage.getItem(`read_chaps_${bookId}`);
-        return data ? JSON.parse(data) : [];
-      } catch (e) { return []; }
-    }
-
-    function markChapAsRead(bookId, chapIndex) {
-      if (!bookId) return;
-      const readList = getReadChapters(bookId);
-      if (!readList.includes(chapIndex)) {
-        readList.push(chapIndex);
-        try {
-          localStorage.setItem(`read_chaps_${bookId}`, JSON.stringify(readList));
-        } catch (e) {}
-      }
-    }
-
-    // ==========================================================
-    // 1. TẢI KỆ SÁCH SIÊU TỐC
-    // ==========================================================
-    function renderSkeletonCards(count = 8) {
-      const shelfGrid = document.getElementById("shelf-grid");
-      shelfGrid.innerHTML = "";
-      for (let i = 0; i < count; i++) {
-        const skeleton = document.createElement("div");
-        skeleton.className = "skeleton-card";
-        skeleton.innerHTML = `
-          <div class="skeleton-cover"></div>
-          <div class="skeleton-line"></div>
-          <div class="skeleton-line short"></div>
-        `;
-        shelfGrid.appendChild(skeleton);
-      }
-    }
-
-    function renderBookGrid(books, animate = true) {
-      document.getElementById("file-counter").innerText = `Tổng cộng: ${books.length} bộ`;
+    /* ==========================================================
+       1. KHỞI TẠO KỆ SÁCH (SHELF VIEW)
+       ========================================================== */
+    function initShelf() {
       const shelfGrid = document.getElementById("shelf-grid");
       shelfGrid.innerHTML = "";
 
-      books.forEach((book, idx) => {
-        const card = document.createElement("div");
-        card.className = animate ? "book-card book-card-animated" : "book-card";
-        if (animate) {
-          card.style.animationDelay = `${Math.min(idx * 40, 800)}ms`;
-        }
-
-        const thumbSrc = book.thumbId ? getDriveImageUrl(book.thumbId, 600) : "";
-
-        card.innerHTML = `
-          <div class="book-cover">
-            ${book.thumbId ? `
-              <img id="shelf-thumb-${book.id}"
-                   src="${thumbSrc}" 
-                   alt="${book.name}" 
-                   class="cover-img" 
-                   loading="lazy" 
-                   onerror="this.style.display='none';" />
-            ` : ''}
-          </div>
-          <div class="book-title" title="${book.name}">${book.name}</div>
-          <div class="book-meta">${book.chapCount} Chap</div>
-        `;
-        card.onclick = () => openBookDetail(book);
-        shelfGrid.appendChild(card);
-      });
+      const card = document.createElement("div");
+      card.className = "book-card";
+      card.innerHTML = `
+        <div class="book-cover">
+          <img src="${encodeURI(COMIC_DATA.cover)}" alt="${COMIC_DATA.title}" class="cover-img" loading="lazy" onerror="this.src=''; this.alt='Ảnh bìa';" />
+        </div>
+        <div class="book-title">${COMIC_DATA.title}</div>
+        <div style="font-size: 0.78rem; color: var(--gold); margin-bottom: 0.5rem;">${COMIC_DATA.subTitle}</div>
+        <div class="book-badge-row">
+          <span class="badge badge-gold">${COMIC_DATA.chapters.length} Tập</span>
+          <span class="badge">190 Trang</span>
+          <span class="badge">PDF</span>
+        </div>
+      `;
+      card.onclick = openDetail;
+      shelfGrid.appendChild(card);
     }
 
-    async function initShelf() {
-      const cached = localStorage.getItem("cached_shelf_books");
-      let hasCache = false;
-
-      if (cached) {
-        try {
-          const books = JSON.parse(cached);
-          if (Array.isArray(books) && books.length > 0) {
-            hasCache = true;
-            renderBookGrid(books, false);
-            document.getElementById("status-tag").innerText = "Đang kiểm tra cập nhật...";
-          }
-        } catch (e) {}
-      }
-
-      if (!hasCache) {
-        renderSkeletonCards(8);
-        document.getElementById("status-tag").innerText = "Đang kết nối Drive...";
-      }
-
-      fetchBookList(false, hasCache);
-    }
-
-    async function fetchBookList(forceRefresh = false, hasCache = false) {
-      const statusTag = document.getElementById("status-tag");
-      if (forceRefresh) {
-        statusTag.innerText = "Đang quét lại Drive...";
-        renderSkeletonCards(8);
-      }
-
-      try {
-        const fetchUrl = forceRefresh 
-          ? `${GOOGLE_SCRIPT_URL}?refresh=1&t=${Date.now()}` 
-          : `${GOOGLE_SCRIPT_URL}?t=${Date.now()}`;
-
-        const response = await fetch(fetchUrl);
-        const res = await response.json();
-
-        if (!res.success) throw new Error(res.error);
-
-        const books = res.books || [];
-        const oldCache = localStorage.getItem("cached_shelf_books");
-        const newCache = JSON.stringify(books);
-
-        localStorage.setItem("cached_shelf_books", newCache);
-
-        if (!hasCache || oldCache !== newCache || forceRefresh) {
-          renderBookGrid(books, true);
-        }
-
-        statusTag.innerText = "Đã cập nhật mới nhất";
-
-      } catch (err) {
-        if (!hasCache) {
-          document.getElementById("shelf-grid").innerHTML = `<div style="color:#ef4444; text-align:center; grid-column: 1/-1; padding: 2rem;">Lỗi nạp danh mục: ${err.message}</div>`;
-        }
-        statusTag.innerText = "Không thể đồng bộ Drive";
-      }
-    }
-
-    function forceRefreshShelf() {
-      fetchBookList(true, false);
-    }
-
-    async function fetchAndCachePdf(pdfId, progressCallback) {
-      let cached = await getStoredPdf(pdfId);
-      if (cached) {
-        if (progressCallback) progressCallback(60, "Đã có sẵn trong bộ nhớ đệm", "Mở trực tiếp từ IndexedDB");
-        return cached;
-      }
-
-      if (activeFetches.has(pdfId)) {
-        return activeFetches.get(pdfId);
-      }
-
-      const fetchPromise = (async () => {
-        try {
-          if (progressCallback) progressCallback(20, "Đang tải dữ liệu từ Google Drive...", "Đang kết nối API");
-          
-          const res = await fetch(`${GOOGLE_SCRIPT_URL}?pdfId=${pdfId}`);
-          const data = await res.json();
-          
-          if (data.success && data.data) {
-            if (progressCallback) progressCallback(55, "Đang giải mã luồng tệp tin...", "Chuyển đổi dữ liệu nhị phân");
-            await yieldFrame();
-
-            const resBlob = await fetch("data:application/pdf;base64," + data.data);
-            const arrayBuf = await resBlob.arrayBuffer();
-            const uint8 = new Uint8Array(arrayBuf);
-            
-            await storePdf(pdfId, uint8);
-            return uint8;
-          }
-        } catch (e) {
-          console.warn("Lỗi tải PDF:", e);
-        } finally {
-          activeFetches.delete(pdfId);
-        }
-        return null;
-      })();
-
-      activeFetches.set(pdfId, fetchPromise);
-      return fetchPromise;
-    }
-
-    async function prefetchSequentially(chaps) {
-      for (const chap of chaps) {
-        if (!chap) continue;
-        const exists = await getStoredPdf(chap.id);
-        if (!exists) {
-          await fetchAndCachePdf(chap.id);
-        }
-      }
-    }
-
-    // 2. CHI TIẾT TRUYỆN
-    async function openBookDetail(book) {
-      selectedBook = book;
-
+    /* ==========================================================
+       2. MÀN HÌNH CHI TIẾT (DETAIL VIEW)
+       ========================================================== */
+    function openDetail() {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
       document.getElementById("shelf-view").style.display = "none";
@@ -1089,51 +1008,42 @@
       document.getElementById("detail-view").style.display = "flex";
       document.getElementById("main-header").style.display = "flex";
 
-      document.getElementById("detail-book-title").innerText = book.name;
-      document.getElementById("detail-chaps-tag").innerText = `${book.chapCount} Chap`;
-
-      const coverImg = document.getElementById("detail-cover-img");
-      if (book.thumbId) {
-        coverImg.src = getDriveImageUrl(book.thumbId, 800);
-        coverImg.style.display = "block";
-      } else {
-        coverImg.style.display = "none";
-      }
-
+      renderDetailView();
       window.scrollTo(0, 0);
-
-      try {
-        const res = await fetch(`${GOOGLE_SCRIPT_URL}?folderId=${book.id}&t=${Date.now()}`);
-        const data = await res.json();
-        if (data.success) {
-          bookChapters = data.chaps || [];
-          document.getElementById("detail-chaps-tag").innerText = `${bookChapters.length} Chap`;
-          
-          if (data.thumbId) {
-            coverImg.src = getDriveImageUrl(data.thumbId, 800);
-            coverImg.style.display = "block";
-          }
-          renderDetailChapGrid(book.id, bookChapters);
-
-          prefetchSequentially([bookChapters[0], bookChapters[1]]);
-        }
-      } catch (e) {
-        console.error("Lỗi lấy danh sách chap:", e);
-      }
     }
 
-    function renderDetailChapGrid(bookId, chaps) {
+    function renderDetailView() {
+      document.getElementById("detail-title").innerText = COMIC_DATA.title;
+      document.getElementById("detail-cover-img").src = encodeURI(COMIC_DATA.cover);
+      document.getElementById("detail-count-tag").innerText = `${COMIC_DATA.chapters.length} Tập (PDF)`;
+
+      const readList = getReadList();
+      const lastReadIdx = getLastRead();
+      const progressTag = document.getElementById("detail-progress-tag");
+      const btnContinue = document.getElementById("btn-continue-read");
+
+      if (readList.length > 0) {
+        progressTag.innerText = `Đã đọc ${readList.length}/${COMIC_DATA.chapters.length} tập`;
+        btnContinue.style.display = "inline-flex";
+        btnContinue.innerText = `🔖 Tiếp tục: ${COMIC_DATA.chapters[lastReadIdx].title}`;
+      } else {
+        progressTag.innerText = "Chưa đọc";
+        btnContinue.style.display = "none";
+      }
+
       const grid = document.getElementById("detail-chap-grid");
       grid.innerHTML = "";
-      const readList = getReadChapters(bookId);
 
-      chaps.forEach((chap, idx) => {
+      COMIC_DATA.chapters.forEach((chap, idx) => {
         const isRead = readList.includes(idx);
-        const btn = document.createElement("div");
-        btn.className = `chap-item ${isRead ? 'read' : 'unread'}`;
-        btn.innerHTML = `<div>Chap ${idx + 1}</div>`;
-        btn.onclick = () => startReadingChapter(idx);
-        grid.appendChild(btn);
+        const item = document.createElement("div");
+        item.className = `chap-item ${isRead ? 'read' : 'unread'}`;
+        item.innerHTML = `
+          <div class="chap-label">${chap.title}</div>
+          <div class="chap-pages">${chap.range}</div>
+        `;
+        item.onclick = () => startReadingChapter(idx);
+        grid.appendChild(item);
       });
     }
 
@@ -1141,29 +1051,34 @@
       startReadingChapter(0);
     }
 
-    // ==========================================================
-    // 3. MỞ ĐỌC DẠNG CUỘN DỌC - NẠP ĐẦY ĐỦ CMAP VÀ FONT CHUẨN
-    // ==========================================================
+    function continueReading() {
+      const last = getLastRead();
+      startReadingChapter(last);
+    }
+
+    /* ==========================================================
+       3. TRÌNH ĐỌC CUỘN DỌC (READER VIEW)
+       ========================================================== */
     async function startReadingChapter(chapIdx = 0) {
-      if (!selectedBook || !bookChapters[chapIdx]) return;
+      if (!COMIC_DATA.chapters[chapIdx]) return;
 
       const sessionId = ++currentSessionId;
       currentChapIndex = chapIdx;
 
       resetZoom();
-      
+
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
-      const chapFile = bookChapters[chapIdx];
+      const chap = COMIC_DATA.chapters[chapIdx];
 
-      // KHÓA CUỘN NGOÀI BODY
+      // KHÓA CUỘN TRANG BODY ĐỂ TRÁNH TRÔI THANH TOOLBAR
       document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
       document.getElementById("main-header").style.display = "none";
       document.getElementById("detail-view").style.display = "none";
       document.getElementById("reader-view").style.display = "flex";
-      document.getElementById("current-chap-label").innerText = `Chap ${chapIdx + 1}`;
+      document.getElementById("current-chap-label").innerText = chap.title;
 
       const overlay = document.getElementById("loading-book-overlay");
       overlay.classList.remove("hide");
@@ -1173,47 +1088,36 @@
       document.getElementById("end-chap-nav").style.display = "none";
       document.getElementById("reader-scroll-container").scrollTop = 0;
 
-      setBookProgress(12, `Đang kết nối Chap ${chapIdx + 1}...`, "Giai đoạn 1/4: Thiết lập kênh truyền");
-      await yieldFrame();
-
-      let fakeProgress = 15;
-      const progressTicker = setInterval(() => {
-        if (fakeProgress < 48) {
-          fakeProgress += 6;
-          setBookProgress(fakeProgress, `Đang nhận dữ liệu Chap ${chapIdx + 1}...`, "Giai đoạn 1/4: Đang tải tệp tin");
-        }
-      }, 160);
+      setBookProgress(20, `Đang nạp ${chap.title}...`, "Đang đọc luồng tệp tin PDF trực tuyến");
 
       try {
-        const pdfBytes = await fetchAndCachePdf(chapFile.id, (pct, title, detail) => {
-          clearInterval(progressTicker);
-          setBookProgress(pct, title, detail);
-        });
-        clearInterval(progressTicker);
-
-        if (sessionId !== currentSessionId) return;
-        if (!pdfBytes) throw new Error("Không thể tải file PDF Chap.");
-
-        setBookProgress(68, "Khởi tạo công cụ đọc...", "Giai đoạn 2/4: Nạp CMap và Font chuẩn");
-        await yieldFrame();
-
-        // NẠP ĐẦY ĐỦ CMAP VÀ STANDARD FONTS ĐỂ RENDER CHỮ TIẾNG VIỆT VECTOR SẮC NÉT
-        currentPdfDoc = await pdfjsLib.getDocument({
-          data: pdfBytes,
+        // NẠP FILE PDF TỪ ĐƯỜNG DẪN STATIC TƯƠNG ĐỐI
+        const encodedUrl = encodeURI(chap.file);
+        
+        const loadingTask = pdfjsLib.getDocument({
+          url: encodedUrl,
           cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
           cMapPacked: true,
           standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/"
-        }).promise;
-        
-        currentNumPages = currentPdfDoc.numPages;
-        if (currentNumPages === 0) throw new Error("File PDF rỗng.");
+        });
 
+        loadingTask.onProgress = function (progress) {
+          if (progress.total > 0) {
+            const pct = 20 + (progress.loaded / progress.total) * 50;
+            setBookProgress(pct, `Đang tải ${chap.title}...`, `${Math.round(progress.loaded / 1024)} KB / ${Math.round(progress.total / 1024)} KB`);
+          }
+        };
+
+        currentPdfDoc = await loadingTask.promise;
+        if (sessionId !== currentSessionId) return;
+
+        currentNumPages = currentPdfDoc.numPages;
         document.getElementById("current-page").innerText = "1";
         document.getElementById("total-pages").innerText = currentNumPages;
 
-        setBookProgress(82, "Đang chuẩn bị khung trang...", `Giai đoạn 3/4: Đã xác nhận ${currentNumPages} trang`);
-        await yieldFrame();
+        setBookProgress(75, "Đang khởi tạo khung trang...", `Tổng số: ${currentNumPages} trang`);
 
+        // Lấy tỷ lệ khung hình từ trang đầu tiên để tạo khung giữ chỗ mượt mà
         const page1 = await currentPdfDoc.getPage(1);
         const vp1 = page1.getViewport({ scale: 1.0 });
 
@@ -1226,12 +1130,13 @@
 
           const loadingTxt = document.createElement("div");
           loadingTxt.className = "page-loading-skeleton";
-          loadingTxt.innerText = `Trang ${p}`;
+          loadingTxt.innerHTML = `<span>⏳ Đang dựng trang ${p}...</span>`;
           container.appendChild(loadingTxt);
 
           wrapper.appendChild(container);
         }
 
+        // TỰ ĐỘNG VẼ TRANG KHI CUỘN ĐẾN GẦN (LAZY-LOAD)
         pageObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -1244,9 +1149,10 @@
           });
         }, {
           root: document.getElementById("reader-scroll-container"),
-          rootMargin: "500px 0px"
+          rootMargin: "600px 0px"
         });
 
+        // THEO DÕI SỐ TRANG HIỆN TẠI KHI NGƯỜI DÙNG CUỘN
         scrollTrackerObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -1264,41 +1170,37 @@
           scrollTrackerObserver.observe(c);
         });
 
-        setBookProgress(95, "Đang dựng trang bìa Ultra-HD...", "Giai đoạn 4/4: Hoàn thiện độ sắc nét gốc");
-        await yieldFrame();
-
-        const firstPageEl = allContainers[0];
-        if (firstPageEl) {
-          firstPageEl.dataset.rendered = "true";
-          await renderSinglePage(1, firstPageEl);
+        // Ưu tiên render trang 1 ngay lập tức
+        if (allContainers[0]) {
+          allContainers[0].dataset.rendered = "true";
+          await renderSinglePage(1, allContainers[0]);
         }
 
+        // Cập nhật nút chuyển chương cuối trang
         const btnPrev = document.getElementById("btn-prev-chap");
         const btnNext = document.getElementById("btn-next-chap");
         btnPrev.style.display = (chapIdx > 0) ? "inline-flex" : "none";
-        btnNext.style.display = (chapIdx + 1 < bookChapters.length) ? "inline-flex" : "none";
+        btnNext.style.display = (chapIdx + 1 < COMIC_DATA.chapters.length) ? "inline-flex" : "none";
         document.getElementById("end-chap-nav").style.display = "flex";
 
-        markChapAsRead(selectedBook.id, chapIdx);
+        // Đánh dấu đã đọc
+        markAsRead(chapIdx);
 
-        setBookProgress(100, "Sẵn sàng!", "Mời bạn thưởng thức truyện");
-        await new Promise(r => setTimeout(r, 180));
-        overlay.classList.add("hide");
-
-        prefetchSequentially([bookChapters[chapIdx + 1], bookChapters[chapIdx + 2]]);
+        setBookProgress(100, "Hoàn tất!", "Bắt đầu đọc truyện");
+        setTimeout(() => {
+          overlay.classList.add("hide");
+        }, 150);
 
       } catch (err) {
-        clearInterval(progressTicker);
         if (sessionId === currentSessionId) {
-          alert("Lỗi tải Chap: " + err.message);
+          console.error("Lỗi đọc PDF:", err);
+          alert("Không thể mở tệp PDF! Vui lòng kiểm tra lại đường dẫn file trên repository: " + chap.file);
           backToDetail();
         }
       }
     }
 
-    // ==========================================================
-    // VẼ TRANG VỚI ĐỘ NÉT GỐC 300 DPI CHUẨN IN ẤN (ULTRA-HD)
-    // ==========================================================
+    /* RENDER TỪNG TRANG VỚI ĐỘ PHÂN GIẢI SẮC NÉT (HI-RES) */
     async function renderSinglePage(pageNum, container) {
       if (!currentPdfDoc) return;
 
@@ -1315,16 +1217,15 @@
         const isMobile = window.innerWidth <= 768;
         const containerWidth = container.clientWidth || (isMobile ? window.innerWidth : BASE_READER_WIDTH);
 
-        // ĐỘ PHÂN GIẢI NÉT GỐC (300 DPI TƯƠNG ĐƯƠNG ~4.16X SCALE)
-        // Chiều rộng pixel vẽ tối thiểu 2800px để chữ và tranh không bị vỡ hạt như file gốc
+        // ĐẢM BẢO ĐỘ NÉT CỰC CAO (2.5x DPR VÀ TỐI THIỂU 2400PX WIDTH)
         const zoomFactor = currentZoomPercent / 100;
         const targetPixelWidth = Math.min(
           Math.max(
-            Math.round(containerWidth * Math.max(dpr, 2.5) * zoomFactor),
-            Math.round(baseVp.width * 3.8 * zoomFactor),
-            2800
+            Math.round(containerWidth * Math.max(dpr, 2.2) * zoomFactor),
+            Math.round(baseVp.width * 3.2 * zoomFactor),
+            2400
           ),
-          3840 // Giới hạn an toàn 4K UHD chống tràn RAM
+          3840
         );
 
         const scale = targetPixelWidth / baseVp.width;
@@ -1347,8 +1248,7 @@
           alpha: false,
           willReadFrequently: false 
         });
-        
-        // BẬT BỘ LỌC KHỬ RĂNG CƯA CHẤT LƯỢNG CAO NHẤT
+
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
 
@@ -1370,9 +1270,9 @@
       }
     }
 
-    // ==========================================================
-    // 4. HỆ THỐNG ZOOM CHUNG (DEBOUNCED RE-RENDER CHỐNG MỜ)
-    // ==========================================================
+    /* ==========================================================
+       4. HỆ THỐNG ZOOM TOÀN CỤC
+       ========================================================== */
     function applyZoom(val) {
       currentZoomPercent = Math.max(60, Math.min(220, parseInt(val)));
       const slider = document.getElementById("zoom-slider");
@@ -1382,14 +1282,9 @@
       if (valLabel) valLabel.innerText = currentZoomPercent + "%";
       
       const isMobile = window.innerWidth <= 768;
-      let targetWidth;
-
-      if (isMobile) {
-        const baseMobileWidth = window.innerWidth;
-        targetWidth = Math.round(baseMobileWidth * (currentZoomPercent / 100));
-      } else {
-        targetWidth = Math.round(BASE_READER_WIDTH * (currentZoomPercent / 100));
-      }
+      let targetWidth = isMobile 
+        ? Math.round(window.innerWidth * (currentZoomPercent / 100))
+        : Math.round(BASE_READER_WIDTH * (currentZoomPercent / 100));
 
       document.documentElement.style.setProperty('--reader-max-width', `${targetWidth}px`);
       document.documentElement.style.setProperty('--reader-width', `${targetWidth}px`);
@@ -1421,56 +1316,40 @@
       });
     }
 
-    function onZoomSlider(val) {
-      applyZoom(val);
-    }
+    function onZoomSlider(val) { applyZoom(val); }
+    function stepZoom(delta) { applyZoom(currentZoomPercent + delta); }
+    function resetZoom() { applyZoom(100); }
 
-    function stepZoom(delta) {
-      applyZoom(currentZoomPercent + delta);
-    }
-
-    function resetZoom() {
-      applyZoom(100);
-    }
-
-    window.addEventListener("resize", () => {
-      if (document.getElementById("reader-view").style.display === "flex") {
-        applyZoom(currentZoomPercent);
-      }
-    });
-
-    // ==========================================
-    // ĐIỀU HƯỚNG & PHÍM TẮT
-    // ==========================================
+    /* ==========================================================
+       5. ĐIỀU HƯỚNG VÀ POPUP CHỌN TẬP
+       ========================================================== */
     function scrollToTop() {
       document.getElementById("reader-scroll-container").scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function prevChapter() {
-      if (currentChapIndex > 0) {
-        startReadingChapter(currentChapIndex - 1);
-      }
+      if (currentChapIndex > 0) startReadingChapter(currentChapIndex - 1);
     }
 
     function nextChapter() {
-      if (currentChapIndex + 1 < bookChapters.length) {
-        startReadingChapter(currentChapIndex + 1);
-      }
+      if (currentChapIndex + 1 < COMIC_DATA.chapters.length) startReadingChapter(currentChapIndex + 1);
     }
 
     function openChapModal() {
-      if (!bookChapters.length) return;
-      const readList = getReadChapters(selectedBook.id);
+      const readList = getReadList();
       const grid = document.getElementById("modal-chap-grid");
       grid.innerHTML = "";
 
-      bookChapters.forEach((chap, c) => {
+      COMIC_DATA.chapters.forEach((chap, c) => {
         const isRead = readList.includes(c);
         const isActive = (c === currentChapIndex);
 
         const btn = document.createElement("div");
         btn.className = `chap-item ${isRead ? 'read' : 'unread'} ${isActive ? 'active' : ''}`;
-        btn.innerHTML = `<div>Chap ${c + 1}</div>`;
+        btn.innerHTML = `
+          <div class="chap-label">${chap.title}</div>
+          <div class="chap-pages">${chap.range}</div>
+        `;
         btn.onclick = () => {
           closeChapModal();
           startReadingChapter(c);
@@ -1496,11 +1375,7 @@
       document.getElementById("reader-view").style.display = "none";
       document.getElementById("scroll-pages-wrapper").innerHTML = "";
 
-      if (selectedBook) {
-        openBookDetail(selectedBook);
-      } else {
-        backToShelf();
-      }
+      openDetail();
     }
 
     function backToShelf() {
@@ -1517,17 +1392,20 @@
       document.getElementById("main-header").style.display = "flex";
 
       document.getElementById("scroll-pages-wrapper").innerHTML = "";
-      selectedBook = null;
     }
 
+    // PHÍM TẮT BÀN PHÍM
     window.addEventListener("keydown", (e) => {
       if (document.getElementById("reader-view").style.display === "flex") {
         if (e.key === "ArrowLeft") prevChapter();
         if (e.key === "ArrowRight") nextChapter();
+        if (e.key === "Escape") closeChapModal();
       }
     });
 
-    window.addEventListener("DOMContentLoaded", initShelf);
+    window.addEventListener("DOMContentLoaded", () => {
+      initShelf();
+    });
   </script>
 </body>
 </html>
