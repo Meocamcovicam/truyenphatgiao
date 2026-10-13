@@ -2,11 +2,11 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <!-- KHÓA ZOOM VIEWPORT TOÀN TRANG ĐỂ THANH MENU LUÔN GHIM CỐ ĐỊNH, KHÔNG BỊ TRƯỢT/PHÓNG TO -->
+  <!-- KHÓA ZOOM VIEWPORT TOÀN TRANG ĐỂ THANH MENU LUÔN GHIM CỐ ĐỊNH 100% TRÊN CẢ PC VÀ MOBILE -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Truyện Tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Gốc Siêu Nét</title>
+  <title>Truyện Tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Trực Tuyến Tối Giản</title>
   
-  <!-- PDF.js Engine dành cho Mobile -->
+  <!-- PDF.js Engine Chuẩn Sắc Nét -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
@@ -22,6 +22,7 @@
       --gold-hover: #d97706;
       --text: #f8fafc;
       --text-muted: #94a3b8;
+      --reader-max-width: 820px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,7 +41,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* HEADER */
+    /* HEADER CHÍNH */
     header {
       height: 54px;
       padding: 0 1.2rem;
@@ -84,7 +85,7 @@
       background: #1e293b;
       color: var(--text);
       border: 1px solid var(--border);
-      padding: 0.45rem 0.85rem;
+      padding: 0.42rem 0.8rem;
       border-radius: 8px;
       cursor: pointer;
       font-size: 0.84rem;
@@ -92,7 +93,7 @@
       transition: all 0.2s;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.35rem;
       white-space: nowrap;
       text-decoration: none;
       user-select: none;
@@ -377,7 +378,7 @@
     }
 
     /* ==========================================================
-       GIAO DIỆN 3: TRÌNH ĐỌC PDF TRỰC TIẾP (READER VIEW)
+       GIAO DIỆN 3: TRÌNH ĐỌC TỐI GIẢN ĐỒNG NHẤT (PC & MOBILE)
        ========================================================== */
     #reader-view {
       display: none;
@@ -396,7 +397,7 @@
       overscroll-behavior: none;
     }
 
-    /* THANH CÔNG CỤ CỐ ĐỊNH 100% Ở ĐẦU TRANG - KHÔNG BAO GIỜ BỊ ZOOM HAY TRƯỢT */
+    /* THANH CÔNG CỤ CỐ ĐỊNH TỐI GIẢN (Y HỆT HÌNH ẢNH MOBILE) */
     .reader-toolbar {
       position: sticky;
       top: 0;
@@ -410,122 +411,108 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 0.8rem;
-      gap: 0.5rem;
+      padding: 0 1rem;
+      gap: 0.6rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.6);
       z-index: 200;
       user-select: none;
-      touch-action: none; /* Ngăn chặn cử chỉ zoom trực tiếp lên thanh menu */
+      touch-action: none; /* Khóa zoom trình duyệt vào thanh menu */
     }
 
-    .toolbar-left, .toolbar-center, .toolbar-right {
+    .toolbar-left, .toolbar-right {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
     }
 
-    .doc-badge {
+    /* HUY HIỆU TRANG KIỂU TỐI GIẢN */
+    .page-counter-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
       background: #0b111c;
-      padding: 0.3rem 0.65rem;
+      padding: 0.35rem 0.75rem;
       border-radius: 8px;
       border: 1px solid var(--border);
-      font-size: 0.8rem;
+      font-size: 0.84rem;
       font-weight: 700;
-      color: var(--accent);
+      color: #38bdf8;
       white-space: nowrap;
+      user-select: none;
     }
-    .doc-badge span.dot {
+    .page-counter-badge span.dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
       background: #10b981;
       display: inline-block;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
     }
 
-    /* 1. KHUNG CHỨA TRÌNH ĐỌC CHO PC (IFRAME NATIVE) */
-    #native-viewer-container {
-      flex: 1;
-      width: 100%;
-      height: calc(100vh - 52px);
-      height: calc(100dvh - 52px);
-      position: relative;
-      background: #1a1e24;
-      display: none;
-      flex-direction: column;
-    }
-    #native-viewer-frame {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-      background: #1a1e24;
-    }
-
-    /* 2. KHUNG CHỨA TRÌNH ĐỌC TRỰC TIẾP CHO MOBILE */
-    #mobile-viewer-container {
+    /* KHUNG CUỘN ĐỌC TRANH TỐI GIẢN TRỰC TIẾP (CHO CẢ PC VÀ MOBILE) */
+    #reader-scroll-container {
       flex: 1;
       width: 100%;
       height: calc(100vh - 52px);
       height: calc(100dvh - 52px);
       position: relative;
       background: #060911;
-      display: none;
+      display: flex;
       flex-direction: column;
       overflow-y: auto;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 0.6rem 0 3.5rem 0;
-      touch-action: pan-x pan-y; /* Cho phép cuộn mượt tự nhiên */
+      padding: 0.8rem 0 4rem 0;
+      touch-action: pan-x pan-y;
     }
 
-    .mobile-pages-wrapper {
+    /* BỌC NỘI DUNG TRANH - CĂN GIỮA ĐẸP MẮT TRÊN PC */
+    .pages-content-wrapper {
       width: 100%;
-      max-width: 820px;
+      max-width: var(--reader-max-width, 820px);
       margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       padding: 0 4px;
       transform-origin: top center;
       transition: width 0.08s ease-out, max-width 0.08s ease-out;
     }
 
-    .mobile-page-box {
+    .page-box {
       width: 100%;
       background: #0d1422;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      border-radius: 2px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.55);
+      border-radius: 3px;
       overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 200px;
+      min-height: 220px;
     }
-    .mobile-page-box canvas {
+    .page-box canvas {
       display: block;
       width: 100% !important;
       height: auto !important;
       image-rendering: auto;
     }
-    .mobile-loading-txt {
+    .page-loading-txt {
       color: #64748b;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      padding: 3rem 0;
+      padding: 3.5rem 0;
+      user-select: none;
     }
 
     .end-chap-nav {
-      margin-top: 1.8rem;
-      padding: 1.2rem 0.5rem;
+      margin-top: 2rem;
+      padding: 1.5rem 0.5rem;
       display: flex;
       justify-content: center;
       gap: 0.8rem;
       width: 100%;
-      max-width: 820px;
+      max-width: var(--reader-max-width, 820px);
       margin-left: auto;
       margin-right: auto;
       border-top: 1px solid var(--border);
@@ -574,8 +561,8 @@
       gap: 0.75rem;
     }
 
-    /* OVERLAY LOADING CHO MOBILE */
-    #mobile-loading-overlay {
+    /* OVERLAY LOADING TIẾN TRÌNH */
+    #reader-loading-overlay {
       position: absolute;
       inset: 0;
       background: rgba(5, 8, 15, 0.92);
@@ -590,7 +577,7 @@
       visibility: visible;
       transition: opacity 0.2s, visibility 0.2s;
     }
-    #mobile-loading-overlay.hide {
+    #reader-loading-overlay.hide {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
@@ -607,7 +594,7 @@
       to { transform: rotate(360deg); }
     }
 
-    /* RESPONSIVE CHO MOBILE */
+    /* RESPONSIVE CHO MÀN HÌNH NHỎ */
     @media (max-width: 768px) {
       .detail-card {
         flex-direction: column;
@@ -627,10 +614,11 @@
       .detail-actions .btn { flex: 1; justify-content: center; }
 
       .reader-toolbar {
-        padding: 0 0.4rem;
+        padding: 0 0.5rem;
         gap: 0.35rem;
       }
-      .btn { padding: 0.38rem 0.55rem; font-size: 0.76rem; }
+      .btn { padding: 0.38rem 0.55rem; font-size: 0.78rem; }
+      .page-counter-badge { padding: 0.3rem 0.55rem; font-size: 0.78rem; }
     }
   </style>
 </head>
@@ -652,7 +640,7 @@
     <div class="shelf-header">
       <div>
         <h2>Kệ Truyện Tranh Phật Giáo</h2>
-        <p>Tuyển tập truyện tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Gốc Siêu Nét 100%</p>
+        <p>Tuyển tập truyện tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Trực Tuyến Tối Giản</p>
       </div>
       <span id="shelf-stat" style="color: var(--gold); font-size: 0.88rem; font-weight: 600;">1 Bộ truyện (10 Tập)</span>
     </div>
@@ -675,7 +663,7 @@
           <div class="detail-title" id="detail-title">Truyện tranh A Di Đà Kinh</div>
           <div class="detail-sub">Phật Thuyết A Di Đà Kinh (Amituofojing 网络用)</div>
           <div class="detail-desc">
-            Trọn bộ truyện tranh minh họa Phật Thuyết A Di Đà Kinh bằng tranh vẽ màu trang nghiêm, sống động. Đọc trực tiếp từ file PDF gốc chuẩn in ấn với độ nét 100% không vỡ hạt, hỗ trợ hiển thị tối ưu liền mạch trên cả PC và điện thoại di động.
+            Trọn bộ truyện tranh minh họa Phật Thuyết A Di Đà Kinh bằng tranh vẽ màu trang nghiêm, sống động. Đọc trực tiếp từ file PDF gốc với độ nét 100% không vỡ hạt, giao diện tối giản đồng nhất trên cả máy tính PC và điện thoại di động.
           </div>
           <div class="detail-meta-tags">
             <span class="badge badge-gold" id="detail-count-tag">10 Tập (PDF)</span>
@@ -705,9 +693,9 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC PDF TRỰC TIẾP (READER VIEW) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC TỐI GIẢN CHUẨN HOÁ (ĐỒNG NHẤT PC & MOBILE NHƯ HÌNH) -->
   <div id="reader-view">
-    <!-- THANH ĐIỀU HƯỚNG CỐ ĐỊNH HOÀN TOÀN TRÊN ĐẦU TRANG -->
+    <!-- THANH CÔNG CỤ CỐ ĐỊNH HOÀN TOÀN TRÊN ĐẦU TRANG -->
     <div class="reader-toolbar">
       <div class="toolbar-left">
         <button class="btn" onclick="backToShelf()" title="Về trang chủ kệ sách">🏠 Kệ sách</button>
@@ -717,39 +705,30 @@
         </button>
       </div>
 
-      <div class="toolbar-center">
-        <div class="doc-badge" id="reader-status-badge">
-          <span class="dot"></span>
-          <span id="reader-status-text">Bản Gốc 100%</span>
-        </div>
-      </div>
-
       <div class="toolbar-right">
+        <!-- BỘ ĐẾM TRANG VÀ CHẤM XANH CHUẨN ĐỒNG BỘ NHƯ HÌNH MOBILE -->
+        <div class="page-counter-badge" id="reader-status-badge">
+          <span class="dot"></span>
+          <span id="reader-status-text">Trang 1 / 20</span>
+        </div>
+
         <button class="btn" onclick="prevChapter()" title="Tập trước">‹</button>
         <button class="btn" onclick="nextChapter()" title="Tập sau">›</button>
-        <a id="btn-open-direct" class="btn btn-gold" href="#" target="_blank" title="Mở file PDF gốc trong tab mới độc lập">
-          ↗ Mở Tab Mới
-        </a>
       </div>
     </div>
 
-    <!-- 1. BẢN CHO PC: IFRAME PDF NATIVE GỐC (SẮC NÉT 100%, TẮT LỀ TRÁI) -->
-    <div id="native-viewer-container">
-      <iframe id="native-viewer-frame" src="" allowfullscreen></iframe>
-    </div>
-
-    <!-- 2. BẢN CHO MOBILE: ENGINE ĐỌC TRỰC TIẾP (HỖ TRỢ 2 NGÓN TAY ZOOM RIÊNG NỘI DUNG TRANH) -->
-    <div id="mobile-viewer-container">
-      <div id="mobile-loading-overlay">
+    <!-- KHUNG CUỘN ĐỌC TRANH TỰ NHIÊN, KHÔNG CÓ IFRAME CLUNKY CỦA CHROME/CỐC CỐC -->
+    <div id="reader-scroll-container">
+      <div id="reader-loading-overlay">
         <div class="spinner"></div>
         <div style="font-size: 0.88rem; color: var(--accent); font-weight: 600;">Đang mở trang truyện trực tuyến...</div>
       </div>
 
-      <div class="mobile-pages-wrapper" id="mobile-pages-wrapper"></div>
+      <div class="pages-content-wrapper" id="pages-content-wrapper"></div>
 
       <div class="end-chap-nav" id="end-chap-nav" style="display: none;">
         <button class="btn" id="btn-prev-chap" onclick="prevChapter()">‹ Tập trước</button>
-        <button class="btn" onclick="scrollToTopMobile()">↑ Lên đầu</button>
+        <button class="btn" onclick="scrollToTop()">↑ Lên đầu</button>
         <button class="btn btn-accent" id="btn-next-chap" onclick="nextChapter()">Tập sau ›</button>
       </div>
     </div>
@@ -842,14 +821,14 @@
     };
 
     let currentChapIndex = 0;
-    let mobileObserver = null;
-    let mobileScrollTracker = null;
-    let currentPdfDocMobile = null;
+    let pageObserver = null;
+    let scrollTracker = null;
+    let currentPdfDoc = null;
     let currentSessionId = 0;
-    let mobileTotalPages = 20;
+    let totalPagesCount = 20;
 
-    // QUẢN LÝ ZOOM NỘI BỘ DÀNH CHO MOBILE
-    let currentMobileScale = 1.0;
+    // HỆ THỐNG ZOOM NỘI BỘ VÙNG TRANH
+    let currentScale = 1.0;
     let pinchStartDistance = 0;
     let pinchStartScale = 1.0;
     let lastTapTime = 0;
@@ -858,14 +837,6 @@
     // Cấu hình PDF.js
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    }
-
-    // Kiểm tra thiết bị có phải Mobile / Tablet không
-    function isMobileDevice() {
-      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isSmallScreen = window.innerWidth <= 768;
-      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-      return isMobileUA || (isSmallScreen && isTouch);
     }
 
     // Quản lý LocalStorage
@@ -984,9 +955,7 @@
     }
 
     /* ==========================================================
-       3. BẮT ĐẦU ĐỌC TRUYỆN: TỰ ĐỘNG KHỚP PC VÀ MOBILE
-       - Trên PC: Mở iframe native PDFium 100% nét gốc không lề trái
-       - Trên Mobile: Mở trực tiếp trong trang, thanh menu ghim cố định 100%
+       3. BẮT ĐẦU ĐỌC TRUYỆN (ĐỒNG NHẤT CẢ PC VÀ MOBILE)
        ========================================================== */
     function startReadingChapter(chapIdx = 0) {
       if (!COMIC_DATA.chapters[chapIdx]) return;
@@ -994,8 +963,8 @@
       const chap = COMIC_DATA.chapters[chapIdx];
       const encodedUrl = encodeURI(chap.file);
 
-      // Reset zoom
-      resetMobileZoom();
+      // Đặt lại tỷ lệ phóng to
+      resetZoom();
 
       // Khóa cuộn trang nền body
       document.documentElement.style.overflow = "hidden";
@@ -1005,38 +974,19 @@
       document.getElementById("reader-view").style.display = "flex";
       document.getElementById("current-chap-label").innerText = chap.title;
 
-      const directBtn = document.getElementById("btn-open-direct");
-      directBtn.href = encodedUrl;
-
-      const isMobile = isMobileDevice();
-
-      if (!isMobile) {
-        // TRÊN PC: DÙNG IFRAME GỐC CHUẨN IN ẤN
-        document.getElementById("native-viewer-container").style.display = "flex";
-        document.getElementById("mobile-viewer-container").style.display = "none";
-        document.getElementById("reader-status-text").innerText = "Bản PDF Gốc (100% Size)";
-
-        const nativeFrame = document.getElementById("native-viewer-frame");
-        nativeFrame.src = `${encodedUrl}#navpanes=0&pagemode=none&zoom=100`;
-      } else {
-        // TRÊN MOBILE: DÙNG BỘ RENDER NỘI BỘ, GIỮ THANH MENU BẤT ĐỘNG
-        document.getElementById("native-viewer-container").style.display = "none";
-        document.getElementById("mobile-viewer-container").style.display = "flex";
-
-        loadMobileDirectReader(encodedUrl, chapIdx);
-      }
-
+      // Nạp truyện với giao diện tối giản chuẩn mực
+      loadChapterPages(encodedUrl, chapIdx);
       markAsRead(chapIdx);
     }
 
     /* ==========================================================
-       4. BỘ DỰNG HÌNH TRỰC TIẾP CHO MOBILE (SẮC NÉT RETINA 100%)
+       4. BỘ DỰNG HÌNH TỐI GIẢN SIÊU NÉT (HIỂN THỊ CHUẨN GỐC)
        ========================================================== */
-    async function loadMobileDirectReader(pdfUrl, chapIdx) {
+    async function loadChapterPages(pdfUrl, chapIdx) {
       const sessionId = ++currentSessionId;
-      const overlay = document.getElementById("mobile-loading-overlay");
-      const wrapper = document.getElementById("mobile-pages-wrapper");
-      const scrollBox = document.getElementById("mobile-viewer-container");
+      const overlay = document.getElementById("reader-loading-overlay");
+      const wrapper = document.getElementById("pages-content-wrapper");
+      const scrollBox = document.getElementById("reader-scroll-container");
       
       overlay.classList.remove("hide");
       wrapper.innerHTML = "";
@@ -1044,8 +994,8 @@
       scrollBox.scrollLeft = 0;
       document.getElementById("end-chap-nav").style.display = "none";
 
-      if (mobileObserver) mobileObserver.disconnect();
-      if (mobileScrollTracker) mobileScrollTracker.disconnect();
+      if (pageObserver) pageObserver.disconnect();
+      if (scrollTracker) scrollTracker.disconnect();
 
       try {
         const loadingTask = pdfjsLib.getDocument({
@@ -1055,44 +1005,46 @@
           standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/"
         });
 
-        currentPdfDocMobile = await loadingTask.promise;
+        currentPdfDoc = await loadingTask.promise;
         if (sessionId !== currentSessionId) return;
 
-        mobileTotalPages = currentPdfDocMobile.numPages;
-        updateMobileStatusBadge(1);
+        totalPagesCount = currentPdfDoc.numPages;
+        updateStatusBadge(1);
 
-        const page1 = await currentPdfDocMobile.getPage(1);
+        const page1 = await currentPdfDoc.getPage(1);
         const vp1 = page1.getViewport({ scale: 1.0 });
 
-        for (let p = 1; p <= mobileTotalPages; p++) {
+        for (let p = 1; p <= totalPagesCount; p++) {
           const pageBox = document.createElement("div");
-          pageBox.className = "mobile-page-box";
+          pageBox.className = "page-box";
           pageBox.dataset.page = p;
           pageBox.dataset.rendered = "false";
           pageBox.style.aspectRatio = `${vp1.width} / ${vp1.height}`;
-          pageBox.innerHTML = `<div class="mobile-loading-txt">Trang ${p}</div>`;
+          pageBox.innerHTML = `<div class="page-loading-txt">Trang ${p}</div>`;
           wrapper.appendChild(pageBox);
         }
 
-        mobileObserver = new IntersectionObserver((entries) => {
+        // Tự động render trang khi cuộn đến gần
+        pageObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             const el = entry.target;
             if (entry.isIntersecting) {
               if (el.dataset.rendered === "false") {
                 el.dataset.rendered = "true";
-                renderSingleMobilePage(parseInt(el.dataset.page), el);
+                renderSinglePage(parseInt(el.dataset.page), el);
               }
             }
           });
         }, {
           root: scrollBox,
-          rootMargin: "600px 0px"
+          rootMargin: "700px 0px"
         });
 
-        mobileScrollTracker = new IntersectionObserver((entries) => {
+        // Theo dõi số trang hiện tại khi người dùng cuộn
+        scrollTracker = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
-              updateMobileStatusBadge(parseInt(entry.target.dataset.page));
+              updateStatusBadge(parseInt(entry.target.dataset.page));
             }
           });
         }, {
@@ -1100,17 +1052,19 @@
           threshold: 0.3
         });
 
-        const allBoxes = wrapper.querySelectorAll(".mobile-page-box");
+        const allBoxes = wrapper.querySelectorAll(".page-box");
         allBoxes.forEach(b => {
-          mobileObserver.observe(b);
-          mobileScrollTracker.observe(b);
+          pageObserver.observe(b);
+          scrollTracker.observe(b);
         });
 
+        // Ưu tiên dựng ngay trang 1
         if (allBoxes[0]) {
           allBoxes[0].dataset.rendered = "true";
-          await renderSingleMobilePage(1, allBoxes[0]);
+          await renderSinglePage(1, allBoxes[0]);
         }
 
+        // Cập nhật nút điều hướng cuối tập
         const btnPrev = document.getElementById("btn-prev-chap");
         const btnNext = document.getElementById("btn-next-chap");
         btnPrev.style.display = (chapIdx > 0) ? "inline-flex" : "none";
@@ -1129,23 +1083,24 @@
       }
     }
 
-    function updateMobileStatusBadge(pageNum = 1) {
-      const zoomText = currentMobileScale > 1.05 ? ` (${Math.round(currentMobileScale * 100)}%)` : '';
-      document.getElementById("reader-status-text").innerText = `Trang ${pageNum} / ${mobileTotalPages}${zoomText}`;
+    function updateStatusBadge(pageNum = 1) {
+      const zoomText = currentScale > 1.05 ? ` (${Math.round(currentScale * 100)}%)` : '';
+      document.getElementById("reader-status-text").innerText = `Trang ${pageNum} / ${totalPagesCount}${zoomText}`;
     }
 
-    async function renderSingleMobilePage(pageNum, container) {
-      if (!currentPdfDocMobile) return;
+    async function renderSinglePage(pageNum, container) {
+      if (!currentPdfDoc) return;
       try {
-        const page = await currentPdfDocMobile.getPage(pageNum);
+        const page = await currentPdfDoc.getPage(pageNum);
         const baseVp = page.getViewport({ scale: 1.0 });
 
-        const clientWidth = container.clientWidth || window.innerWidth;
+        // Chiều rộng hiển thị (khớp tỉ lệ trên PC lẫn Mobile)
+        const clientWidth = container.clientWidth || 820;
         const displayScale = clientWidth / baseVp.width;
         const viewport = page.getViewport({ scale: displayScale });
 
-        // Tối ưu độ phân giải sắc nét tương ứng với độ phóng to
-        const dpr = Math.min(Math.max((window.devicePixelRatio || 2) * currentMobileScale, 2.0), 3.5);
+        // Độ sắc nét điểm ảnh chuẩn in ấn (Super-sampling 2.2x - 3.5x)
+        const dpr = Math.min(Math.max((window.devicePixelRatio || 1.5) * currentScale, 2.2), 3.5);
 
         const canvas = document.createElement("canvas");
         canvas.width = Math.floor(viewport.width * dpr);
@@ -1171,56 +1126,57 @@
         container.dataset.rendered = "true";
 
       } catch (e) {
-        console.error("Lỗi vẽ trang mobile " + pageNum, e);
+        console.error("Lỗi vẽ trang " + pageNum, e);
       }
     }
 
     /* ==========================================================
-       HỆ THỐNG ZOOM 2 NGÓN TAY RIÊNG CHO NỘI DUNG TRANH
-       (THANH CÔNG CỤ HOÀN TOÀN BẤT ĐỘNG, GHIM 100% TRÊN ĐẦU)
+       HỆ THỐNG ZOOM ĐỘC LẬP VÙNG TRANH (THANH MENU LUÔN CỐ ĐỊNH)
        ========================================================== */
-    const mobileScrollContainer = document.getElementById("mobile-viewer-container");
-    const mobilePagesWrapper = document.getElementById("mobile-pages-wrapper");
+    const scrollContainer = document.getElementById("reader-scroll-container");
+    const pagesWrapper = document.getElementById("pages-content-wrapper");
 
-    function applyMobileZoom(newScale) {
-      currentMobileScale = Math.max(1.0, Math.min(2.8, newScale));
+    function applyZoom(newScale) {
+      currentScale = Math.max(1.0, Math.min(3.0, newScale));
       
-      if (currentMobileScale <= 1.02) {
-        currentMobileScale = 1.0;
-        mobilePagesWrapper.style.width = '100%';
-        mobilePagesWrapper.style.maxWidth = '820px';
+      const isMobile = window.innerWidth <= 768;
+      const baseMaxWidth = isMobile ? window.innerWidth : 820;
+
+      if (currentScale <= 1.02) {
+        currentScale = 1.0;
+        pagesWrapper.style.width = '100%';
+        pagesWrapper.style.maxWidth = `${baseMaxWidth}px`;
       } else {
-        const pct = Math.round(currentMobileScale * 100);
-        mobilePagesWrapper.style.width = pct + '%';
-        mobilePagesWrapper.style.maxWidth = pct + '%';
+        const targetWidth = Math.round(baseMaxWidth * currentScale);
+        pagesWrapper.style.width = `${targetWidth}px`;
+        pagesWrapper.style.maxWidth = `${targetWidth}px`;
       }
 
       // Cập nhật số trang & phần trăm zoom
       const currentPageNum = document.getElementById("reader-status-text").innerText.match(/Trang (\d+)/);
-      updateMobileStatusBadge(currentPageNum ? parseInt(currentPageNum[1]) : 1);
+      updateStatusBadge(currentPageNum ? parseInt(currentPageNum[1]) : 1);
     }
 
-    function resetMobileZoom() {
-      applyMobileZoom(1.0);
+    function resetZoom() {
+      applyZoom(1.0);
     }
 
-    // XỬ LÝ CỬ CHỈ PINCH BẰNG 2 NGÓN TAY TRÊN VÙNG TRANH
-    mobileScrollContainer.addEventListener("touchstart", (e) => {
+    // CỬ CHỈ PINCH BẰNG 2 NGÓN TAY HOẶC DOUBLE TAP
+    scrollContainer.addEventListener("touchstart", (e) => {
       if (e.touches.length === 2) {
         pinchStartDistance = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
-        pinchStartScale = currentMobileScale;
+        pinchStartScale = currentScale;
       } else if (e.touches.length === 1) {
-        // Nhấn đúp (Double tap) để phóng to 1.8x hoặc trở về 100%
         const now = Date.now();
         if (now - lastTapTime < 280) {
           e.preventDefault();
-          if (currentMobileScale > 1.1) {
-            resetMobileZoom();
+          if (currentScale > 1.1) {
+            resetZoom();
           } else {
-            applyMobileZoom(1.8);
+            applyZoom(1.8);
           }
           scheduleVisiblePagesReRender();
         }
@@ -1228,19 +1184,19 @@
       }
     }, { passive: false });
 
-    mobileScrollContainer.addEventListener("touchmove", (e) => {
+    scrollContainer.addEventListener("touchmove", (e) => {
       if (e.touches.length === 2 && pinchStartDistance > 0) {
-        e.preventDefault(); // Ngăn chặn hoàn toàn cử chỉ zoom trình duyệt lên thanh menu
+        e.preventDefault();
         const currentDistance = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
         const factor = currentDistance / pinchStartDistance;
-        applyMobileZoom(pinchStartScale * factor);
+        applyZoom(pinchStartScale * factor);
       }
     }, { passive: false });
 
-    mobileScrollContainer.addEventListener("touchend", (e) => {
+    scrollContainer.addEventListener("touchend", (e) => {
       if (e.touches.length < 2 && pinchStartDistance > 0) {
         pinchStartDistance = 0;
         scheduleVisiblePagesReRender();
@@ -1250,20 +1206,20 @@
     function scheduleVisiblePagesReRender() {
       clearTimeout(reRenderDebounceTimer);
       reRenderDebounceTimer = setTimeout(() => {
-        const boxes = mobilePagesWrapper.querySelectorAll(".mobile-page-box");
-        const scrollRect = mobileScrollContainer.getBoundingClientRect();
+        const boxes = pagesWrapper.querySelectorAll(".page-box");
+        const scrollRect = scrollContainer.getBoundingClientRect();
         boxes.forEach(box => {
           const rect = box.getBoundingClientRect();
           const isVisible = (rect.bottom >= scrollRect.top - 200 && rect.top <= scrollRect.bottom + 200);
           if (isVisible) {
-            renderSingleMobilePage(parseInt(box.dataset.page), box);
+            renderSinglePage(parseInt(box.dataset.page), box);
           }
         });
       }, 250);
     }
 
-    function scrollToTopMobile() {
-      mobileScrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+    function scrollToTop() {
+      scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     /* ==========================================================
@@ -1311,9 +1267,8 @@
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
       document.getElementById("reader-view").style.display = "none";
-      document.getElementById("native-viewer-frame").src = "";
-      if (mobileObserver) mobileObserver.disconnect();
-      if (mobileScrollTracker) mobileScrollTracker.disconnect();
+      if (pageObserver) pageObserver.disconnect();
+      if (scrollTracker) scrollTracker.disconnect();
       openDetail();
     }
 
@@ -1325,12 +1280,11 @@
       document.getElementById("detail-view").style.display = "none";
       document.getElementById("shelf-view").style.display = "block";
       document.getElementById("main-header").style.display = "flex";
-      document.getElementById("native-viewer-frame").src = "";
-      if (mobileObserver) mobileObserver.disconnect();
-      if (mobileScrollTracker) mobileScrollTracker.disconnect();
+      if (pageObserver) pageObserver.disconnect();
+      if (scrollTracker) scrollTracker.disconnect();
     }
 
-    // Phím tắt trên PC
+    // Phím tắt tiện lợi trên PC (Mũi tên trái/phải để chuyển tập)
     window.addEventListener("keydown", (e) => {
       if (document.getElementById("reader-view").style.display === "flex") {
         if (e.key === "ArrowLeft") prevChapter();
