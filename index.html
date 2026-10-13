@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tủ Sách Điện Tử - Flipbook Reader</title>
+  <title>Tủ Sách Điện Tử - PDF Reader</title>
   
   <!-- PDF.js Engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -29,7 +29,7 @@
       -webkit-tap-highlight-color: transparent;
     }
     header {
-      height: 50px;
+      height: 52px;
       padding: 0 1.2rem;
       background: rgba(30, 41, 59, 0.95);
       backdrop-filter: blur(8px);
@@ -45,11 +45,33 @@
       color: var(--accent); 
       cursor: pointer;
       user-select: none;
-      transition: opacity 0.2s;
     }
-    header h1:hover { opacity: 0.8; text-decoration: underline; }
-    
-    /* GIAO DIỆN 1: KỆ SÁCH (HOME) */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .btn-folder {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #0f172a;
+      font-weight: 600;
+      border: none;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .btn-folder:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    /* GIAO DIỆN 1: KỆ SÁCH */
     #shelf-view {
       padding: 1.5rem;
       max-width: 1200px;
@@ -78,9 +100,8 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.4);
       border-color: var(--accent);
     }
-    
     .book-cover {
-      height: 230px;
+      height: 240px;
       background: #090e1a;
       border-radius: 8px;
       display: flex;
@@ -88,7 +109,6 @@
       justify-content: center;
       margin-bottom: 0.8rem;
       overflow: hidden;
-      position: relative;
       border: 1px solid #334155;
     }
     .cover-img {
@@ -100,9 +120,8 @@
       transition: transform 0.3s ease;
     }
     .book-card:hover .cover-img { transform: scale(1.04); }
-
     .book-title {
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 600;
       line-height: 1.4;
       margin-bottom: 0.4rem;
@@ -113,12 +132,23 @@
       overflow: hidden;
     }
     .book-meta {
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       margin-top: auto;
     }
 
-    /* GIAO DIỆN 2: CHI TIẾT TRUYỆN & CHỌN CHAP */
+    .empty-shelf-notice {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-muted);
+    }
+    .empty-shelf-notice h3 {
+      font-size: 1.3rem;
+      color: var(--text);
+      margin-bottom: 0.8rem;
+    }
+
+    /* GIAO DIỆN 2: CHI TIẾT TRUYỆN */
     #detail-view {
       display: none;
       padding: 1.5rem;
@@ -145,7 +175,6 @@
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid #475569;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
       background: #090e1a;
     }
     .detail-cover-box img {
@@ -153,7 +182,6 @@
       height: 100%;
       object-fit: cover;
       object-position: top center;
-      display: block;
     }
     .detail-info {
       display: flex;
@@ -165,22 +193,17 @@
       font-size: 1.4rem;
       font-weight: 700;
       color: var(--text);
-      line-height: 1.35;
       margin-bottom: 0.8rem;
-    }
-    .detail-meta-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      margin-bottom: 1.5rem;
     }
     .meta-tag {
       background: #334155;
       color: var(--accent);
       padding: 0.35rem 0.8rem;
       border-radius: 6px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: 500;
+      display: inline-block;
+      margin-bottom: 1.5rem;
     }
     .btn-read-start {
       background: linear-gradient(135deg, #0284c7, #38bdf8);
@@ -191,19 +214,13 @@
       font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
       width: fit-content;
-      transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+      transition: all 0.2s;
     }
     .btn-read-start:hover {
+      filter: brightness(1.1);
       transform: translateY(-2px);
-      filter: brightness(1.08);
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
     }
-
     .chap-section {
       background: var(--card-bg);
       border-radius: 16px;
@@ -214,176 +231,193 @@
       font-size: 1.1rem;
       font-weight: 600;
       margin-bottom: 1.2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       border-bottom: 1px solid #334155;
       padding-bottom: 0.8rem;
     }
     .chap-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 0.75rem;
     }
     .chap-item {
       padding: 0.75rem 0.5rem;
       border-radius: 8px;
-      border: 1px solid #334155;
+      border: 1px solid #38bdf8;
+      background: #0284c7;
+      color: #ffffff;
       text-align: center;
       cursor: pointer;
       font-size: 0.88rem;
       font-weight: 600;
       transition: all 0.2s;
       user-select: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .chap-item.unread {
-      background: #0284c7;
-      color: #ffffff;
-      border-color: #38bdf8;
-    }
-    .chap-item.unread:hover { background: #0369a1; transform: translateY(-2px); }
-    .chap-item.read {
-      background: #1e293b;
-      color: #94a3b8;
-      border-color: #334155;
-    }
-    .chap-item.read:hover { background: #334155; color: #ffffff; }
+    .chap-item:hover { background: #0369a1; transform: translateY(-2px); }
 
-    /* GIAO DIỆN 3: TRÌNH ĐỌC TRUYỆN SIÊU NÉT (DIRECT CANVAS) */
+    /* GIAO DIỆN 3: TRÌNH ĐỌC TRUYỆN CUỘN DỌC (VERTICAL SCROLL) */
     #reader-view {
       display: none;
       flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      height: calc(100vh - 50px);
-      padding: 0.3rem 0.5rem;
-      box-sizing: border-box;
+      height: calc(100vh - 52px);
       overflow: hidden;
       position: relative;
     }
     .reader-toolbar {
       width: 100%;
-      max-width: 1200px;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.2rem 0;
+      padding: 0.5rem 1rem;
       flex-shrink: 0;
-      z-index: 5;
+      z-index: 10;
       gap: 0.5rem;
     }
     .btn {
       background: #334155;
       color: white;
       border: none;
-      padding: 0.4rem 0.8rem;
+      padding: 0.45rem 0.85rem;
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.85rem;
       font-weight: 500;
-      transition: background 0.2s, transform 0.1s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
+      transition: background 0.2s;
       white-space: nowrap;
     }
-    .btn:hover { background: #475569; }
+    .btn:hover:not(:disabled) { background: #475569; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn-accent { background: var(--accent-hover); }
-    .btn-accent:hover { background: #0369a1; }
-
-    .zoom-toolbar {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: #1e293b;
-      padding: 0.25rem 0.6rem;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-    .zoom-toolbar input[type="range"] {
-      width: 90px;
-      height: 5px;
-      accent-color: var(--accent);
-      cursor: pointer;
-    }
-    .zoom-toolbar span {
-      font-size: 0.8rem;
-      min-width: 40px;
-      text-align: center;
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .btn-icon {
-      background: #334155;
-      color: white;
-      border: none;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      line-height: 1;
-      transition: background 0.2s;
-    }
-    .btn-icon:hover { background: #475569; }
 
     .bottom-bar {
       width: 100%;
-      max-width: 1200px;
+      background: #1e293b;
+      border-top: 1px solid #334155;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 0.8rem;
-      padding: 0.2rem 0;
+      gap: 1.2rem;
+      padding: 0.45rem 1rem;
       flex-shrink: 0;
-      flex-wrap: wrap;
-      z-index: 5;
+      z-index: 10;
+    }
+    .zoom-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #0f172a;
+      padding: 0.3rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .zoom-toolbar input[type="range"] {
+      width: 90px;
+      accent-color: var(--accent);
+      cursor: pointer;
     }
 
-    #book-wrapper {
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    /* VÙNG CUỘN CÁC TRANG PDF TỪ TRÊN XUỐNG */
+    #pdf-scroll-container {
       flex: 1;
       width: 100%;
-      min-height: 0;
-      overflow: hidden;
-      user-select: none;
-      touch-action: pan-y;
-    }
-
-    /* KHUNG HIỂN THỊ TRANG CANVAS HI-DPI */
-    #page-stage {
+      overflow-y: auto;
+      overflow-x: auto;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      gap: 6px;
-      transform-origin: center center;
-      transition: transform 0.05s linear;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    .canvas-page-wrapper {
+      padding: 1.2rem 0.8rem 2.5rem 0.8rem;
+      gap: 16px;
+      scroll-behavior: smooth;
       background: #090e1a;
+    }
+
+    .pdf-page-slot {
+      position: relative;
+      background: #1e293b;
+      border-radius: 6px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
       overflow: hidden;
-      border-radius: 4px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      flex-shrink: 0;
     }
-
-    /* Đảm bảo Canvas luôn được khử răng cưa và sắc nét tối đa */
-    .canvas-page-wrapper canvas {
+    .pdf-page-canvas {
       display: block;
-      object-fit: contain;
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: high-quality;
+      width: 100%;
+      height: 100%;
+    }
+    .page-slot-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 10px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #94a3b8;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+    }
+    .slot-loader {
+      position: absolute;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
+    /* KHUNG THÔNG BÁO CUỐI CHƯƠNG */
+    .chap-end-card {
+      width: 100%;
+      max-width: 600px;
+      margin: 1.5rem auto 1rem auto;
+      background: var(--card-bg);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    .chap-end-card h4 {
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+
+    /* NÚT CUỘN LÊN ĐẦU TRANG */
+    #btn-scroll-top {
+      position: absolute;
+      right: 1.2rem;
+      bottom: 4rem;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(30, 41, 59, 0.9);
+      color: var(--accent);
+      border: 1px solid #475569;
+      font-size: 1.2rem;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      z-index: 30;
+      transition: all 0.2s;
+    }
+    #btn-scroll-top:hover {
+      background: var(--accent);
+      color: #0f172a;
+    }
+
+    /* MODAL CHỌN CHAP */
     #chap-modal {
       display: none;
       position: fixed;
@@ -404,7 +438,6 @@
       max-height: 80vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
     }
     .modal-header {
       padding: 1rem 1.2rem;
@@ -421,194 +454,104 @@
       gap: 0.6rem;
     }
 
-    .progress-box {
-      width: 100%;
-      max-width: 380px;
-      background: #1e293b;
-      padding: 1.25rem;
-      border-radius: 12px;
-      border: 1px solid #334155;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
-    }
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-    .progress-track {
-      width: 100%;
-      height: 8px;
-      background: #334155;
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #0284c7, #38bdf8);
-      border-radius: 999px;
-      transition: width 0.12s ease-out;
-    }
-
-    #loading-book-overlay {
+    #loading-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.96);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(4px);
       z-index: 50;
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-    }
-
-    @media (max-width: 768px) {
-      .detail-card {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 1.2rem;
-      }
-      .detail-cover-box {
-        width: 180px;
-        min-width: 180px;
-        height: 250px;
-      }
-      .detail-info { align-items: center; }
-      .detail-meta-tags { justify-content: center; }
-      .btn-read-start { width: 100%; justify-content: center; }
-    }
-
-    @media (max-width: 600px) {
-      header { height: 46px; padding: 0 0.8rem; }
-      header h1 { font-size: 1rem; }
-      #reader-view { height: calc(100vh - 46px); }
-      #current-book-name { max-width: 35% !important; font-size: 0.8rem !important; }
-      .reader-toolbar { font-size: 0.8rem !important; }
-      .btn { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
-      .zoom-toolbar input[type="range"] { width: 65px; }
-      .book-cover { height: 190px; }
-      .chap-grid, .modal-body { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      gap: 0.8rem;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1 onclick="backToShelf()" title="Bấm để quay về danh mục sách">Tủ Sách Trực Tuyến</h1>
-    <div id="status-tag" style="font-size: 0.8rem; color: var(--text-muted);">Đang kết nối...</div>
+    <h1 onclick="backToShelf()">Tủ Sách Trực Tuyến</h1>
+    <div class="header-actions">
+      <!-- Input ẩn để duyệt thư mục PDF -->
+      <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;" onchange="handleFolderSelect(event)">
+      <button class="btn-folder" onclick="document.getElementById('folderInput').click()">
+        📁 Chọn thư mục PDF
+      </button>
+      <span id="shelf-status" style="font-size: 0.85rem; color: var(--text-muted);"></span>
+    </div>
   </header>
 
-  <!-- MÀN HÌNH 1: KỆ SÁCH (HOME) -->
+  <!-- MÀN HÌNH 1: KỆ SÁCH -->
   <main id="shelf-view">
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
-      <h2>Danh mục truyện tranh</h2>
-      <span id="file-counter" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>Kệ Truyện Tranh</h2>
+      <span id="book-count" style="color: var(--text-muted); font-size: 0.9rem;"></span>
     </div>
-
-    <div id="loading-shelf" style="display: flex; justify-content: center; padding: 3rem 1rem;">
-      <div class="progress-box">
-        <div class="progress-header">
-          <span id="shelf-prog-text">Đang đồng bộ Google Drive...</span>
-          <span id="shelf-prog-pct" style="color: var(--accent);">0%</span>
-        </div>
-        <div class="progress-track">
-          <div id="shelf-prog-bar" class="progress-fill"></div>
-        </div>
-      </div>
-    </div>
-
     <div id="shelf-grid" class="grid"></div>
   </main>
 
-  <!-- MÀN HÌNH 2: CHI TIẾT TRUYỆN & DANH SÁCH CHAP -->
+  <!-- MÀN HÌNH 2: CHI TIẾT TRUYỆN -->
   <div id="detail-view">
-    <div style="display: flex; justify-content: flex-start;">
+    <div>
       <button class="btn" onclick="backToShelf()">← Quay lại kệ sách</button>
     </div>
-
     <div class="detail-card">
       <div class="detail-cover-box">
         <img id="detail-cover-img" src="" alt="Thumbnail" />
       </div>
       <div class="detail-info">
         <div>
-          <div class="detail-title" id="detail-book-title">Tên truyện</div>
-          <div class="detail-meta-tags">
-            <span class="meta-tag" id="detail-chaps-tag">-- Chap</span>
-          </div>
+          <h2 class="detail-title" id="detail-book-title">Tên truyện</h2>
+          <span class="meta-tag" id="detail-chaps-tag">0 Chap</span>
         </div>
-        
-        <button class="btn-read-start" onclick="readFromBeginning()">
-          📖 Đọc từ đầu
-        </button>
+        <button class="btn-read-start" onclick="readFromBeginning()">📖 Đọc từ đầu</button>
       </div>
     </div>
 
     <div class="chap-section">
-      <div class="chap-section-header">
-        <span>Danh sách Chapter (File PDF)</span>
-      </div>
+      <div class="chap-section-header">Danh Sách Chapter (File PDF)</div>
       <div class="chap-grid" id="detail-chap-grid"></div>
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC TRUYỆN SIÊU NÉT (DIRECT CANVAS) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC TRUYỆN CUỘN DỌC LIÊN TỤC -->
   <div id="reader-view">
     <div class="reader-toolbar">
-      <button class="btn" onclick="backToDetail()">← Danh mục chap</button>
-      <span id="current-book-name" style="font-weight: 600; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
-      
-      <button class="btn btn-accent" onclick="openChapModal()">
-        📚 <span id="current-chap-label">Chap 1</span> ▾
-      </button>
-
-      <div style="font-size: 0.85rem;">
-        Trang <span id="current-page">1</span>
-      </div>
+      <button class="btn" onclick="backToDetail()">← Mục lục</button>
+      <span id="current-book-name" style="font-weight: 600; max-width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+      <button class="btn btn-accent" onclick="openChapModal()">📚 <span id="current-chap-label">Chap 1</span> ▾</button>
+      <span style="font-size: 0.85rem;">Trang: <span id="page-num" style="color: var(--accent); font-weight: 700;">1</span> / <span id="page-count">--</span></span>
     </div>
 
-    <div id="loading-book-overlay">
-      <div class="progress-box">
-        <div class="progress-header">
-          <span id="book-prog-text">Đang tải dữ liệu Chap...</span>
-          <span id="book-prog-pct" style="color: var(--accent);">0%</span>
-        </div>
-        <div class="progress-track">
-          <div id="book-prog-bar" class="progress-fill"></div>
-        </div>
-      </div>
+    <div id="loading-overlay">
+      <div style="color: var(--accent); font-weight: 600;" id="loading-text">Đang tải Chapter...</div>
     </div>
 
-    <div id="book-wrapper">
-      <div id="page-stage"></div>
+    <!-- KHUNG CUỘN CÁC TRANG TỪ TRÊN XUỐNG -->
+    <div id="pdf-scroll-container" onscroll="handleScroll()">
+      <!-- Các trang PDF sẽ được render vào đây theo chiều dọc -->
     </div>
+
+    <!-- Nút nhanh cuộn về đầu trang -->
+    <button id="btn-scroll-top" onclick="scrollToTop()" title="Cuộn lên đầu">↑</button>
 
     <div class="bottom-bar">
-      <button class="btn" onclick="prevPage()">‹ Trang trước</button>
-      
+      <button class="btn" id="btn-prev-chap" onclick="prevChapter()">‹ Chap trước</button>
       <div class="zoom-toolbar">
-        <button class="btn-icon" onclick="stepZoom(-0.2)" title="Thu nhỏ">−</button>
-        <input type="range" id="zoom-slider" min="1" max="2.5" step="0.05" value="1" oninput="onZoomSlider(this.value)">
-        <button class="btn-icon" onclick="stepZoom(0.2)" title="Phóng to">+</button>
-        <span id="zoom-val">100%</span>
-        <button class="btn-icon" onclick="resetZoom()" title="Về 100%">↺</button>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Thu phóng</span>
+        <input type="range" id="zoom-slider" min="0.6" max="2.0" step="0.1" value="1.0" oninput="changeZoom(this.value)">
+        <span id="zoom-val" style="font-size: 0.8rem; color: var(--accent);">100%</span>
       </div>
-
-      <button class="btn" onclick="nextPage()">Trang sau ›</button>
+      <button class="btn" id="btn-next-chap" onclick="nextChapter()">Chap sau ›</button>
     </div>
   </div>
 
-  <!-- POPUP CHỌN CHAPTER NHANH -->
+  <!-- POPUP CHỌN CHAP NHANH -->
   <div id="chap-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 style="font-size: 1rem;">Chuyển nhanh Chapter</h3>
+        <h3 style="font-size: 1rem;">Danh Sách Chapter</h3>
         <button class="btn" onclick="closeChapModal()">✕ Đóng</button>
       </div>
       <div class="modal-body" id="modal-chap-grid"></div>
@@ -616,80 +559,481 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOwmO8RSpnp9xgWBCBvBkPyVDmtjtuon9nWWNibD_E8FalOFEf7zRQPeeVVTtrM03D-g/exec";
-
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-    let currentSessionId = 0;
-    let selectedBook = null;
-    let bookChapters = [];
+    // Quản lý dữ liệu thư viện sách
+    let libraryBooks = []; 
+    let currentBook = null;
     let currentChapIndex = 0;
-    let currentPdfDoc = null;
-    let currentNumPages = 0;
-    let curPageNum = 1;
-    let isRendering = false;
+    
+    // Quản lý PDF & Trình đọc cuộn dọc
+    let pdfDoc = null;
+    let currentScale = 1.0;
+    let pageObserver = null;
+    const renderedPages = new Set();
+    const activeRenderTasks = new Map();
+    let defaultAspectRatio = 1.414; // A4 chuẩn mặc định
 
-    // Quản lý Zoom & Pan
-    let currentZoom = 1;
-    let currentPanX = 0;
-    let currentPanY = 0;
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
+    const scrollContainer = document.getElementById('pdf-scroll-container');
 
-    let singlePageW = 400;
-    let singlePageH = 600;
-    let isMobileView = false;
+    // Hàm so sánh tên theo số thứ tự tự nhiên (chap 1 -> chap 2 -> chap 10)
+    function naturalCompare(a, b) {
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    }
 
-    const memoryPdfCache = new Map();
+    // Xử lý khi chọn Folder PDF
+    async function handleFolderSelect(event) {
+      const files = Array.from(event.target.files);
+      if (!files || files.length === 0) return;
 
-    function openPdfDB() {
-      return new Promise((resolve) => {
-        const req = indexedDB.open("MangaPdfStore_v4", 1);
-        req.onupgradeneeded = (e) => e.target.result.createObjectStore("chap_pdfs");
-        req.onsuccess = (e) => resolve(e.target.result);
-        req.onerror = () => resolve(null);
+      document.getElementById('shelf-status').innerText = 'Đang đọc thư mục...';
+      const bookMap = new Map();
+
+      for (const file of files) {
+        const parts = file.webkitRelativePath.split('/');
+        let folderName = "";
+        if (parts.length >= 3) {
+          folderName = parts[1];
+        } else if (parts.length === 2 && !file.name.endsWith('.html')) {
+          folderName = parts[0];
+        }
+
+        if (!folderName) continue;
+
+        if (!bookMap.has(folderName)) {
+          bookMap.set(folderName, {
+            title: folderName,
+            coverUrl: null,
+            chapters: []
+          });
+        }
+
+        const book = bookMap.get(folderName);
+        const lowerName = file.name.toLowerCase();
+
+        // Ảnh bìa
+        if (lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.webp')) {
+          if (!book.coverUrl) {
+            book.coverUrl = URL.createObjectURL(file);
+          }
+        }
+
+        // File PDF Chapter
+        if (lowerName.endsWith('.pdf')) {
+          book.chapters.push({
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            file: file
+          });
+        }
+      }
+
+      libraryBooks = Array.from(bookMap.values()).filter(b => b.chapters.length > 0);
+      
+      libraryBooks.forEach(b => {
+        b.chapters.sort((c1, c2) => naturalCompare(c1.name, c2.name));
+        if (!b.coverUrl) {
+          b.coverUrl = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='280' viewBox='0 0 200 280'><rect width='200' height='280' fill='%231e293b'/><text x='50%' y='50%' fill='%2394a3b8' font-size='16' text-anchor='middle'>Chưa có bìa</text></svg>";
+        }
+      });
+
+      libraryBooks.sort((a, b) => naturalCompare(a.title, b.title));
+      document.getElementById('shelf-status').innerText = `Đã nạp ${libraryBooks.length} truyện`;
+      renderShelf();
+    }
+
+    // Hiển thị danh mục truyện lên kệ sách
+    function renderShelf() {
+      const grid = document.getElementById('shelf-grid');
+      const counter = document.getElementById('book-count');
+      grid.innerHTML = '';
+
+      if (libraryBooks.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-shelf-notice" style="grid-column: 1 / -1;">
+            <h3>Chưa có truyện nào được chọn</h3>
+            <p>Bấm vào nút <b>"📁 Chọn thư mục PDF"</b> ở góc phải trên cùng và chọn thư mục <b>PDF</b> của bạn.</p>
+          </div>
+        `;
+        counter.innerText = '';
+        return;
+      }
+
+      counter.innerText = `${libraryBooks.length} bộ truyện`;
+
+      libraryBooks.forEach((book, index) => {
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        card.onclick = () => openBookDetail(index);
+
+        card.innerHTML = `
+          <div class="book-cover">
+            <img class="cover-img" src="${book.coverUrl}" alt="${book.title}" loading="lazy">
+          </div>
+          <div class="book-title" title="${book.title}">${book.title}</div>
+          <div class="book-meta">${book.chapters.length} chapter (PDF)</div>
+        `;
+        grid.appendChild(card);
       });
     }
 
-    async function getStoredPdf(pdfId) {
-      if (memoryPdfCache.has(pdfId)) return memoryPdfCache.get(pdfId);
+    // Mở màn hình chi tiết truyện
+    function openBookDetail(index) {
+      currentBook = libraryBooks[index];
+      document.getElementById('shelf-view').style.display = 'none';
+      document.getElementById('detail-view').style.display = 'flex';
+      document.getElementById('reader-view').style.display = 'none';
+
+      document.getElementById('detail-book-title').innerText = currentBook.title;
+      document.getElementById('detail-cover-img').src = currentBook.coverUrl;
+      document.getElementById('detail-chaps-tag').innerText = `${currentBook.chapters.length} Chapter`;
+
+      const chapGrid = document.getElementById('detail-chap-grid');
+      chapGrid.innerHTML = '';
+
+      currentBook.chapters.forEach((chap, cIdx) => {
+        const item = document.createElement('div');
+        item.className = 'chap-item';
+        item.innerText = chap.name;
+        item.title = chap.name;
+        item.onclick = () => loadChapter(cIdx);
+        chapGrid.appendChild(item);
+      });
+    }
+
+    function readFromBeginning() {
+      if (currentBook && currentBook.chapters.length > 0) {
+        loadChapter(0);
+      }
+    }
+
+    // Tính toán kích thước tối ưu theo màn hình và mức zoom
+    function getPageDimensions(aspect = defaultAspectRatio) {
+      const maxWidth = Math.min(window.innerWidth - 32, 880);
+      const width = Math.round(maxWidth * currentScale);
+      const height = Math.round(width * aspect);
+      return { width, height };
+    }
+
+    // Hủy các tác vụ render đang dang dở
+    function cancelActiveRenders() {
+      for (const task of activeRenderTasks.values()) {
+        try { task.cancel(); } catch(e) {}
+      }
+      activeRenderTasks.clear();
+      renderedPages.clear();
+    }
+
+    // Nạp và hiển thị Chapter dạng cuộn dọc
+    async function loadChapter(index) {
+      currentChapIndex = index;
+      const chapter = currentBook.chapters[index];
+
+      document.getElementById('detail-view').style.display = 'none';
+      document.getElementById('reader-view').style.display = 'flex';
+      document.getElementById('current-book-name').innerText = currentBook.title;
+      document.getElementById('current-chap-label').innerText = chapter.name;
+
+      updateChapterButtons();
+      showLoading(true, `Đang mở ${chapter.name}...`);
+
+      cancelActiveRenders();
+      if (pageObserver) pageObserver.disconnect();
+      scrollContainer.innerHTML = '';
+      scrollContainer.scrollTop = 0;
+
       try {
-        const db = await openPdfDB();
-        if (!db) return null;
-        return new Promise((resolve) => {
-          const tx = db.transaction("chap_pdfs", "readonly");
-          const req = tx.objectStore("chap_pdfs").get(pdfId);
-          req.onsuccess = () => {
-            if (req.result) memoryPdfCache.set(pdfId, req.result);
-            resolve(req.result || null);
-          };
-          req.onerror = () => resolve(null);
+        const arrayBuffer = await chapter.file.arrayBuffer();
+        if (pdfDoc) {
+          pdfDoc.destroy();
+        }
+
+        pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const numPages = pdfDoc.numPages;
+        document.getElementById('page-count').innerText = numPages;
+        document.getElementById('page-num').innerText = '1';
+
+        // Lấy tỷ lệ trang mẫu từ trang 1
+        try {
+          const firstPage = await pdfDoc.getPage(1);
+          const vp = firstPage.getViewport({ scale: 1.0 });
+          defaultAspectRatio = vp.height / vp.width;
+        } catch(e) {}
+
+        const { width, height } = getPageDimensions(defaultAspectRatio);
+
+        // Tạo khung placeholder cho toàn bộ các trang để thanh cuộn hoạt động chuẩn xác
+        for (let i = 1; i <= numPages; i++) {
+          const slot = document.createElement('div');
+          slot.className = 'pdf-page-slot';
+          slot.id = `page-slot-${i}`;
+          slot.dataset.pageNum = i;
+          slot.style.width = `${width}px`;
+          slot.style.height = `${height}px`;
+
+          slot.innerHTML = `
+            <div class="slot-loader" id="loader-${i}">⏳ Đang tải trang ${i}...</div>
+            <canvas class="pdf-page-canvas" id="canvas-${i}"></canvas>
+            <div class="page-slot-badge">${i} / ${numPages}</div>
+          `;
+          scrollContainer.appendChild(slot);
+        }
+
+        // Tạo phần kết thúc chap ở cuối trang cuộn
+        appendChapterEndCard();
+
+        // Thiết lập IntersectionObserver để lazy-render các trang khi cuộn tới gần
+        setupPageObserver();
+
+        showLoading(false);
+      } catch (err) {
+        alert("Lỗi khi đọc file PDF: " + err.message);
+        showLoading(false);
+      }
+    }
+
+    // Lazy load: Chỉ vẽ trang khi cuộn tới gần vùng nhìn thấy (khoảng đệm 400px)
+    function setupPageObserver() {
+      pageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const pageNum = parseInt(entry.target.dataset.pageNum, 10);
+            renderPageSlot(pageNum);
+          }
         });
-      } catch (e) { return null; }
+      }, {
+        root: scrollContainer,
+        rootMargin: '400px 0px 400px 0px',
+        threshold: 0.01
+      });
+
+      const slots = scrollContainer.querySelectorAll('.pdf-page-slot');
+      slots.forEach(s => pageObserver.observe(s));
     }
 
-    async function storePdf(pdfId, uint8Array) {
-      memoryPdfCache.set(pdfId, uint8Array);
+    // Kết xuất một trang PDF lên Canvas tương ứng
+    async function renderPageSlot(num) {
+      if (renderedPages.has(num)) return;
+      renderedPages.add(num);
+
       try {
-        const db = await openPdfDB();
-        if (!db) return;
-        const tx = db.transaction("chap_pdfs", "readwrite");
-        tx.objectStore("chap_pdfs").put(uint8Array, pdfId);
-      } catch (e) {}
+        const page = await pdfDoc.getPage(num);
+        const unscaledVp = page.getViewport({ scale: 1.0 });
+        const aspect = unscaledVp.height / unscaledVp.width;
+
+        const { width, height } = getPageDimensions(aspect);
+        const slot = document.getElementById(`page-slot-${num}`);
+        if (!slot) return;
+
+        slot.style.width = `${width}px`;
+        slot.style.height = `${height}px`;
+
+        const canvas = document.getElementById(`canvas-${num}`);
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+
+        // Tính scale thực tế để nét căng trên màn hình Retina/HiDPI
+        const effectiveScale = (width / unscaledVp.width);
+        const viewport = page.getViewport({ scale: effectiveScale });
+
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport,
+          transform: [dpr, 0, 0, dpr, 0, 0]
+        };
+
+        const renderTask = page.render(renderContext);
+        activeRenderTasks.set(num, renderTask);
+
+        await renderTask.promise;
+        activeRenderTasks.delete(num);
+
+        const loader = document.getElementById(`loader-${num}`);
+        if (loader) loader.style.display = 'none';
+
+      } catch (err) {
+        if (err && err.name === 'RenderingCancelledException') {
+          // Bỏ qua khi người dùng zoom hoặc chuyển chap
+        } else {
+          console.error("Lỗi vẽ trang PDF:", num, err);
+        }
+      }
     }
 
-    function getDriveImageUrl(fileId, size = 800) {
-      return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
+    // Cập nhật số trang hiện tại dựa trên vị trí cuộn
+    let scrollTimeout = null;
+    function handleScroll() {
+      // Hiện / ẩn nút cuộn lên đầu
+      const btnTop = document.getElementById('btn-scroll-top');
+      if (scrollContainer.scrollTop > 500) {
+        btnTop.style.display = 'flex';
+      } else {
+        btnTop.style.display = 'none';
+      }
+
+      if (scrollTimeout) return;
+      scrollTimeout = requestAnimationFrame(() => {
+        updateVisiblePageIndicator();
+        scrollTimeout = null;
+      });
     }
 
-    function setShelfProgress(pct, text) {
-      document.getElementById("shelf-prog-bar").style.width = pct + "%";
-      document.getElementById("shelf-prog-pct").innerText = Math.round(pct) + "%";
-      if (text) document.getElementById("shelf-prog-text").innerText = text;
+    function updateVisiblePageIndicator() {
+      const slots = scrollContainer.querySelectorAll('.pdf-page-slot');
+      if (slots.length === 0) return;
+
+      const containerMid = scrollContainer.scrollTop + (scrollContainer.clientHeight / 2);
+      let closestPage = 1;
+      let minDistance = Infinity;
+
+      slots.forEach(slot => {
+        const slotMid = slot.offsetTop + (slot.offsetHeight / 2);
+        const dist = Math.abs(containerMid - slotMid);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestPage = slot.dataset.pageNum;
+        }
+      });
+
+      document.getElementById('page-num').innerText = closestPage;
     }
 
-    function setBookProgress(pct, text) {
-      document.getElementById("book-prog-bar").style.width = pct + "%";
-      document.getElementById("book-prog-pct").innerText = Math.round(pct) + "%";
-      if (text) document.getElementById("book-prog-text").innerText = text;
+    function scrollToTop() {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Tạo khối thẻ thông báo kết thúc Chapter
+    function appendChapterEndCard() {
+      const isLastChap = (currentChapIndex >= currentBook.chapters.length - 1);
+      const nextChapName = !isLastChap ? currentBook.chapters[currentChapIndex + 1].name : "";
+
+      const endCard = document.createElement('div');
+      endCard.className = 'chap-end-card';
+      endCard.innerHTML = `
+        <h4>✨ Đã đọc hết ${currentBook.chapters[currentChapIndex].name}</h4>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          ${isLastChap ? 'Bạn đã đọc đến chapter mới nhất của bộ truyện này.' : `Tiếp theo: <b>${nextChapName}</b>`}
+        </p>
+        <div style="display: flex; gap: 0.8rem; margin-top: 0.5rem;">
+          <button class="btn" onclick="scrollToTop()">↑ Lên đầu chap</button>
+          ${!isLastChap ? `<button class="btn btn-accent" onclick="nextChapter()">Đọc tiếp ${nextChapName} ›</button>` : ''}
+        </div>
+      `;
+      scrollContainer.appendChild(endCard);
+    }
+
+    // Cập nhật trạng thái nút bấm chuyển Chap
+    function updateChapterButtons() {
+      const isFirst = currentChapIndex <= 0;
+      const isLast = !currentBook || currentChapIndex >= currentBook.chapters.length - 1;
+
+      document.getElementById('btn-prev-chap').disabled = isFirst;
+      document.getElementById('btn-next-chap').disabled = isLast;
+    }
+
+    function prevChapter() {
+      if (currentChapIndex > 0) {
+        loadChapter(currentChapIndex - 1);
+      }
+    }
+
+    function nextChapter() {
+      if (currentBook && currentChapIndex < currentBook.chapters.length - 1) {
+        loadChapter(currentChapIndex + 1);
+      }
+    }
+
+    // Thu phóng toàn bộ các trang cuộn
+    let zoomDebounce = null;
+    function changeZoom(val) {
+      currentScale = parseFloat(val);
+      document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
+
+      clearTimeout(zoomDebounce);
+      zoomDebounce = setTimeout(() => {
+        if (!pdfDoc) return;
+        cancelActiveRenders();
+
+        // Cập nhật lại kích thước cho toàn bộ slot
+        const slots = scrollContainer.querySelectorAll('.pdf-page-slot');
+        slots.forEach(slot => {
+          const num = parseInt(slot.dataset.pageNum, 10);
+          const loader = document.getElementById(`loader-${num}`);
+          if (loader) loader.style.display = 'flex';
+          const { width, height } = getPageDimensions(defaultAspectRatio);
+          slot.style.width = `${width}px`;
+          slot.style.height = `${height}px`;
+        });
+
+        // Vẽ lại các trang hiện đang hiển thị
+        setupPageObserver();
+      }, 150);
+    }
+
+    // Điều hướng giao diện
+    function backToShelf() {
+      document.getElementById('shelf-view').style.display = 'block';
+      document.getElementById('detail-view').style.display = 'none';
+      document.getElementById('reader-view').style.display = 'none';
+      closeChapModal();
+      cancelActiveRenders();
+    }
+
+    function backToDetail() {
+      document.getElementById('shelf-view').style.display = 'none';
+      document.getElementById('detail-view').style.display = 'flex';
+      document.getElementById('reader-view').style.display = 'none';
+      closeChapModal();
+      cancelActiveRenders();
+    }
+
+    function openChapModal() {
+      const modal = document.getElementById('chap-modal');
+      const body = document.getElementById('modal-chap-grid');
+      body.innerHTML = '';
+
+      currentBook.chapters.forEach((chap, idx) => {
+        const btn = document.createElement('div');
+        btn.className = 'chap-item';
+        btn.innerText = chap.name;
+        if (idx === currentChapIndex) {
+          btn.style.background = '#0ea5e9';
+          btn.style.borderColor = '#ffffff';
+        }
+        btn.onclick = () => {
+          closeChapModal();
+          loadChapter(idx);
+        };
+        body.appendChild(btn);
+      });
+
+      modal.style.display = 'flex';
+    }
+
+    function closeChapModal() {
+      document.getElementById('chap-modal').style.display = 'none';
+    }
+
+    function showLoading(show, text = "") {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.style.display = show ? 'flex' : 'none';
+      if (text) document.getElementById('loading-text').innerText = text;
+    }
+
+    // Phím tắt bàn phím
+    window.addEventListener('keydown', (e) => {
+      if (document.getElementById('reader-view').style.display === 'flex') {
+        if (e.key === '[' || e.key === 'p') prevChapter();
+        if (e.key === ']' || e.key === 'n') nextChapter();
+      }
+    });
+
+    // Khởi tạo ban đầu
+    renderShelf();
+  </script>
+</body>
+</html>
