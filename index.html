@@ -17,6 +17,7 @@
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --reader-max-width: 820px;
+      --reader-width: 100%;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -335,23 +336,23 @@
     .btn-accent { background: var(--accent-hover); }
     .btn-accent:hover { background: #0369a1; }
 
-    /* THANH ZOOM PC */
-    .pc-zoom-toolbar {
+    /* THANH ZOOM CHO CẢ MOBILE VÀ PC */
+    .zoom-toolbar {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.35rem;
       background: #1e293b;
-      padding: 0.25rem 0.6rem;
+      padding: 0.25rem 0.5rem;
       border-radius: 8px;
       border: 1px solid #334155;
     }
-    .pc-zoom-toolbar input[type="range"] {
-      width: 85px;
+    .zoom-toolbar input[type="range"] {
+      width: 80px;
       height: 5px;
       accent-color: var(--accent);
       cursor: pointer;
     }
-    .pc-zoom-toolbar span {
+    .zoom-toolbar span {
       font-size: 0.8rem;
       min-width: 38px;
       text-align: center;
@@ -371,30 +372,27 @@
     }
     .btn-icon:hover { background: #475569; }
 
-    /* VÙNG CUỘN ĐỌC DỌC & PINCH-TO-ZOOM */
+    /* VÙNG CUỘN ĐỌC DỌC */
     #reader-scroll-container {
       flex: 1;
       overflow-y: auto;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      overflow-x: auto; /* Cho phép cuộn ngang mượt mà khi zoom to */
       padding: 0.8rem 0 3rem 0;
       background: #090e17;
       position: relative;
-      touch-action: pan-y pinch-zoom;
+      -webkit-overflow-scrolling: touch;
     }
     
     .scroll-pages-wrapper {
-      width: 100%;
-      max-width: var(--reader-max-width);
+      width: var(--reader-width, 100%);
+      max-width: var(--reader-max-width, 820px);
+      margin-left: auto;
+      margin-right: auto;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 4px;
-      transform-origin: top center;
-      transition: transform 0.05s linear;
-      will-change: transform;
+      transition: width 0.15s ease-out, max-width 0.15s ease-out;
     }
 
     .pdf-page-container {
@@ -427,6 +425,8 @@
       gap: 1rem;
       width: 100%;
       max-width: var(--reader-max-width);
+      margin-left: auto;
+      margin-right: auto;
       border-top: 1px solid #334155;
     }
 
@@ -468,9 +468,7 @@
       gap: 0.6rem;
     }
 
-    /* ==========================================================
-       ANIMATION LOADING & TIẾN TRÌNH CHI TIẾT
-       ========================================================== */
+    /* ANIMATION LOADING & TIẾN TRÌNH */
     #loading-book-overlay {
       position: absolute;
       inset: 0;
@@ -590,15 +588,20 @@
       .btn-read-start { width: 100%; justify-content: center; }
       #reader-scroll-container { padding: 0 0 2rem 0; }
       .scroll-pages-wrapper { gap: 2px; }
-      .pc-zoom-toolbar { display: none; }
+      .zoom-toolbar input[type="range"] { width: 65px; }
     }
 
     @media (max-width: 600px) {
       header { height: 46px; padding: 0 0.8rem; }
       header h1 { font-size: 1rem; }
-      #current-book-name { max-width: 25% !important; font-size: 0.8rem !important; }
-      .reader-toolbar { font-size: 0.8rem !important; padding: 0 0.5rem; }
-      .btn { padding: 0.35rem 0.6rem; font-size: 0.78rem; }
+      /* Ẩn tên sách trên màn hình hẹp để thanh công cụ rộng rãi */
+      #current-book-name { display: none !important; }
+      .reader-toolbar { font-size: 0.8rem !important; padding: 0 0.4rem; gap: 0.35rem; }
+      .btn { padding: 0.35rem 0.55rem; font-size: 0.76rem; }
+      .zoom-toolbar { padding: 0.2rem 0.35rem; gap: 0.25rem; }
+      .zoom-toolbar input[type="range"] { width: 48px; }
+      .zoom-toolbar span { font-size: 0.75rem; min-width: 32px; }
+      .btn-icon { padding: 0.15rem 0.35rem; font-size: 0.78rem; }
       .book-cover { height: 190px; }
       .chap-grid, .modal-body { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
     }
@@ -660,19 +663,19 @@
   <div id="reader-view">
     <div class="reader-toolbar">
       <button class="btn" onclick="backToDetail()">← Mục lục</button>
-      <span id="current-book-name" style="font-weight: 600; max-width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+      <span id="current-book-name" style="font-weight: 600; max-width: 25%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
       
       <button class="btn btn-accent" onclick="openChapModal()">
         📚 <span id="current-chap-label">Chap 1</span> ▾
       </button>
 
-      <!-- THANH ĐIỀU KHIỂN ZOOM CHO PC -->
-      <div class="pc-zoom-toolbar">
-        <button class="btn-icon" onclick="stepPcZoom(-10)" title="Thu nhỏ">−</button>
-        <input type="range" id="pc-zoom-slider" min="60" max="180" step="5" value="100" oninput="onPcZoomSlider(this.value)">
-        <button class="btn-icon" onclick="stepPcZoom(10)" title="Phóng to">+</button>
-        <span id="pc-zoom-val">100%</span>
-        <button class="btn-icon" onclick="resetPcZoom()" title="Về 100%">↺</button>
+      <!-- THANH ĐIỀU KHIỂN ZOOM DÙNG CHUNG MOBILE & PC -->
+      <div class="zoom-toolbar">
+        <button class="btn-icon" onclick="stepZoom(-10)" title="Thu nhỏ">−</button>
+        <input type="range" id="zoom-slider" min="60" max="200" step="5" value="100" oninput="onZoomSlider(this.value)">
+        <button class="btn-icon" onclick="stepZoom(10)" title="Phóng to">+</button>
+        <span id="zoom-val">100%</span>
+        <button class="btn-icon" onclick="resetZoom()" title="Về 100%">↺</button>
       </div>
 
       <div style="font-size: 0.85rem; white-space: nowrap;">
@@ -680,7 +683,7 @@
       </div>
     </div>
 
-    <!-- OVERLAY LOADING NÂNG CẤP HOẠT ẢNH & TIẾN TRÌNH -->
+    <!-- OVERLAY LOADING TIẾN TRÌNH CHI TIẾT -->
     <div id="loading-book-overlay">
       <div class="loader-ring"></div>
       <div class="progress-box">
@@ -735,24 +738,14 @@
     let pageObserver = null;
     let scrollTrackerObserver = null;
 
-    // Quản lý Zoom PC
-    let pcZoomPercent = 100;
+    // Quản lý Zoom thống nhất Mobile & PC
+    let currentZoomPercent = 100;
     const BASE_READER_WIDTH = 820;
-
-    // Quản lý Pinch-to-zoom Mobile
-    let mobileScale = 1;
-    let mobileStartDist = 0;
-    let mobileStartScale = 1;
-    let mobilePanX = 0, mobilePanY = 0;
-    let mobileStartX = 0, mobileStartY = 0;
-    let lastTapTime = 0;
-    let isPinching = false;
 
     // Bộ nhớ đệm Memory & Request Deduplication
     const memoryPdfCache = new Map();
     const activeFetches = new Map();
 
-    // HÀM NHƯỜNG LUỒNG CHÍNH: GIẢI QUYẾT TRIỆT ĐỂ LỖI KHỰNG TRÌNH DUYỆT
     function yieldFrame() {
       return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
     }
@@ -797,7 +790,6 @@
       return `https://lh3.googleusercontent.com/d/${fileId}=w${size}`;
     }
 
-    // CẬP NHẬT GIAO DIỆN TIẾN TRÌNH RÕ RÀNG
     function setBookProgress(pct, title, detail) {
       const bar = document.getElementById("book-prog-bar");
       const pctEl = document.getElementById("book-prog-pct");
@@ -829,7 +821,7 @@
     }
 
     // ==========================================================
-    // 1. TẢI KỆ SÁCH SIÊU TỐC: CACHE-FIRST & STAGGERED RENDERING
+    // 1. TẢI KỆ SÁCH SIÊU TỐC
     // ==========================================================
     function renderSkeletonCards(count = 8) {
       const shelfGrid = document.getElementById("shelf-grid");
@@ -943,7 +935,6 @@
       fetchBookList(true, false);
     }
 
-    // TẢI FILE PDF & GIẢI MÃ NATIVE ĐƯỢC NHƯỜNG LUỒNG TRÁNH KHỰNG
     async function fetchAndCachePdf(pdfId, progressCallback) {
       let cached = await getStoredPdf(pdfId);
       if (cached) {
@@ -964,7 +955,7 @@
           
           if (data.success && data.data) {
             if (progressCallback) progressCallback(55, "Đang giải mã luồng tệp tin...", "Chuyển đổi dữ liệu nhị phân");
-            await yieldFrame(); // Nhường 1 frame để thanh loading cập nhật
+            await yieldFrame();
 
             const resBlob = await fetch("data:application/pdf;base64," + data.data);
             const arrayBuf = await resBlob.arrayBuffer();
@@ -1057,7 +1048,7 @@
     }
 
     // ==========================================================
-    // 3. MỞ ĐỌC DẠNG CUỘN DỌC - HOÀN TOÀN KHÔNG BỊ KHỰNG
+    // 3. MỞ ĐỌC DẠNG CUỘN DỌC
     // ==========================================================
     async function startReadingChapter(chapIdx = 0) {
       if (!selectedBook || !bookChapters[chapIdx]) return;
@@ -1065,7 +1056,7 @@
       const sessionId = ++currentSessionId;
       currentChapIndex = chapIdx;
 
-      resetMobileZoom();
+      resetZoom();
       
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
@@ -1086,11 +1077,9 @@
       document.getElementById("end-chap-nav").style.display = "none";
       document.getElementById("reader-scroll-container").scrollTop = 0;
 
-      // Bước 1: Khởi động hoạt ảnh loading
       setBookProgress(12, `Đang kết nối Chap ${chapIdx + 1}...`, "Giai đoạn 1/4: Thiết lập kênh truyền");
       await yieldFrame();
 
-      // Giả lập tiến trình chạy mượt khi chờ mạng
       let fakeProgress = 15;
       const progressTicker = setInterval(() => {
         if (fakeProgress < 48) {
@@ -1109,9 +1098,8 @@
         if (sessionId !== currentSessionId) return;
         if (!pdfBytes) throw new Error("Không thể tải file PDF Chap.");
 
-        // Bước 2: Nạp PDF vào Engine Worker của PDF.js
         setBookProgress(68, "Khởi tạo công cụ đọc...", "Giai đoạn 2/4: Phân tích cấu trúc tệp PDF");
-        await yieldFrame(); // Nhường luồng vẽ giao diện
+        await yieldFrame();
 
         currentPdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
         currentNumPages = currentPdfDoc.numPages;
@@ -1121,7 +1109,6 @@
         document.getElementById("current-page").innerText = "1";
         document.getElementById("total-pages").innerText = currentNumPages;
 
-        // Bước 3: Đọc thông số trang đầu tiên & tạo khung trang
         setBookProgress(82, "Đang chuẩn bị khung trang...", `Giai đoạn 3/4: Đã xác nhận ${currentNumPages} trang`);
         await yieldFrame();
 
@@ -1143,7 +1130,6 @@
           wrapper.appendChild(container);
         }
 
-        // Bước 4: Thiết lập IntersectionObserver tải ngầm khi cuộn
         pageObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -1176,7 +1162,6 @@
           scrollTrackerObserver.observe(c);
         });
 
-        // Bước 5: Render trang 1 trước khi gỡ màn hình chờ
         setBookProgress(95, "Đang dựng trang bìa nét cao...", "Giai đoạn 4/4: Hoàn thiện chất lượng ảnh");
         await yieldFrame();
 
@@ -1194,12 +1179,10 @@
 
         markChapAsRead(selectedBook.id, chapIdx);
 
-        // Bước 6: Hoàn tất 100% và ẩn mờ dần màn hình loading
         setBookProgress(100, "Sẵn sàng!", "Mời bạn thưởng thức truyện");
         await new Promise(r => setTimeout(r, 180));
         overlay.classList.add("hide");
 
-        // Tải trước ngầm tuần tự các Chap tiếp theo
         prefetchSequentially([bookChapters[chapIdx + 1], bookChapters[chapIdx + 2]]);
 
       } catch (err) {
@@ -1245,114 +1228,48 @@
       }
     }
 
-    // ==========================================
-    // 4. ZOOM PC
-    // ==========================================
-    function applyPcZoom(val) {
-      pcZoomPercent = Math.max(60, Math.min(180, parseInt(val)));
-      document.getElementById("pc-zoom-slider").value = pcZoomPercent;
-      document.getElementById("pc-zoom-val").innerText = pcZoomPercent + "%";
+    // ==========================================================
+    // 4. HỆ THỐNG ZOOM CHUNG (MOBILE & PC DÙNG THANH TRƯỢT)
+    // ==========================================================
+    function applyZoom(val) {
+      currentZoomPercent = Math.max(60, Math.min(200, parseInt(val)));
+      const slider = document.getElementById("zoom-slider");
+      const valLabel = document.getElementById("zoom-val");
       
-      const targetWidth = Math.round(BASE_READER_WIDTH * (pcZoomPercent / 100));
-      document.documentElement.style.setProperty('--reader-max-width', `${targetWidth}px`);
-    }
+      if (slider) slider.value = currentZoomPercent;
+      if (valLabel) valLabel.innerText = currentZoomPercent + "%";
+      
+      const isMobile = window.innerWidth <= 768;
+      let targetWidth;
 
-    function onPcZoomSlider(val) {
-      applyPcZoom(val);
-    }
-
-    function stepPcZoom(delta) {
-      applyPcZoom(pcZoomPercent + delta);
-    }
-
-    function resetPcZoom() {
-      applyPcZoom(100);
-    }
-
-    // ==========================================
-    // 5. PINCH-TO-ZOOM MOBILE
-    // ==========================================
-    const scrollContainer = document.getElementById("reader-scroll-container");
-    const pagesWrapper = document.getElementById("scroll-pages-wrapper");
-
-    function getTouchDistance(t1, t2) {
-      return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-    }
-
-    function applyMobileTransform() {
-      if (mobileScale <= 1.02) {
-        mobileScale = 1;
-        mobilePanX = 0;
-        mobilePanY = 0;
-        pagesWrapper.style.transform = "";
-        scrollContainer.style.overflowY = "auto";
+      if (isMobile) {
+        // Trên mobile: 100% ứng với chiều rộng màn hình, > 100% cho phép cuộn ngang
+        const baseMobileWidth = window.innerWidth;
+        targetWidth = Math.round(baseMobileWidth * (currentZoomPercent / 100));
       } else {
-        pagesWrapper.style.transform = `translate(${mobilePanX}px, ${mobilePanY}px) scale(${mobileScale})`;
-        scrollContainer.style.overflowY = "hidden";
+        // Trên PC: 100% ứng với chiều rộng chuẩn 820px
+        targetWidth = Math.round(BASE_READER_WIDTH * (currentZoomPercent / 100));
       }
+
+      document.documentElement.style.setProperty('--reader-max-width', `${targetWidth}px`);
+      document.documentElement.style.setProperty('--reader-width', `${targetWidth}px`);
     }
 
-    function resetMobileZoom() {
-      mobileScale = 1;
-      mobilePanX = 0;
-      mobilePanY = 0;
-      applyMobileTransform();
+    function onZoomSlider(val) {
+      applyZoom(val);
     }
 
-    scrollContainer.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 2) {
-        isPinching = true;
-        mobileStartDist = getTouchDistance(e.touches[0], e.touches[1]);
-        mobileStartScale = mobileScale;
-        e.preventDefault();
-      } else if (e.touches.length === 1) {
-        const now = Date.now();
-        if (now - lastTapTime < 300) {
-          if (mobileScale > 1.2) {
-            resetMobileZoom();
-          } else {
-            mobileScale = 1.8;
-            applyMobileTransform();
-          }
-          lastTapTime = 0;
-          return;
-        }
-        lastTapTime = now;
+    function stepZoom(delta) {
+      applyZoom(currentZoomPercent + delta);
+    }
 
-        if (mobileScale > 1.02) {
-          mobileStartX = e.touches[0].clientX - mobilePanX;
-          mobileStartY = e.touches[0].clientY - mobilePanY;
-        }
-      }
-    }, { passive: false });
+    function resetZoom() {
+      applyZoom(100);
+    }
 
-    scrollContainer.addEventListener("touchmove", (e) => {
-      if (e.touches.length === 2 && isPinching) {
-        const currentDist = getTouchDistance(e.touches[0], e.touches[1]);
-        if (mobileStartDist > 0) {
-          const factor = currentDist / mobileStartDist;
-          mobileScale = Math.min(3.5, Math.max(1, mobileStartScale * factor));
-          applyMobileTransform();
-        }
-        e.preventDefault();
-      } else if (e.touches.length === 1 && mobileScale > 1.02) {
-        mobilePanX = e.touches[0].clientX - mobileStartX;
-        mobilePanY = e.touches[0].clientY - mobileStartY;
-        
-        const maxPanX = (pagesWrapper.offsetWidth * (mobileScale - 1)) / 2 + 50;
-        mobilePanX = Math.max(-maxPanX, Math.min(maxPanX, mobilePanX));
-
-        applyMobileTransform();
-        e.preventDefault();
-      }
-    }, { passive: false });
-
-    scrollContainer.addEventListener("touchend", (e) => {
-      if (e.touches.length < 2) {
-        isPinching = false;
-      }
-      if (mobileScale < 1.05) {
-        resetMobileZoom();
+    window.addEventListener("resize", () => {
+      if (document.getElementById("reader-view").style.display === "flex") {
+        applyZoom(currentZoomPercent);
       }
     });
 
@@ -1404,7 +1321,7 @@
 
     function backToDetail() {
       currentSessionId++;
-      resetMobileZoom();
+      resetZoom();
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
@@ -1420,7 +1337,7 @@
 
     function backToShelf() {
       currentSessionId++;
-      resetMobileZoom();
+      resetZoom();
       if (pageObserver) pageObserver.disconnect();
       if (scrollTrackerObserver) scrollTrackerObserver.disconnect();
 
