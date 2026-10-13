@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <!-- KHÓA ZOOM VIEWPORT TOÀN TRANG ĐỂ THANH MENU LUÔN GHIM CỐ ĐỊNH 100% TRÊN CẢ PC VÀ MOBILE -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Truyện Tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Trực Tuyến Tối Giản</title>
+  <title>Tủ Sách Tranh Phật Giáo - Đọc Trực Tuyến Tối Giản</title>
   
   <!-- PDF.js Engine Chuẩn Sắc Nét -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -158,8 +158,8 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 1.4rem;
     }
     .book-card {
       background: var(--card-bg);
@@ -179,7 +179,7 @@
     }
     .book-cover {
       width: 100%;
-      height: 300px;
+      height: 290px;
       background: #060a12;
       border-radius: 10px;
       display: flex;
@@ -208,12 +208,22 @@
       margin-bottom: 0.35rem;
       color: var(--text);
     }
+    .book-subtitle {
+      font-size: 0.76rem;
+      color: var(--gold);
+      margin-bottom: 0.6rem;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
     .book-badge-row {
       display: flex;
       gap: 0.4rem;
       flex-wrap: wrap;
       margin-top: auto;
-      padding-top: 0.6rem;
+      padding-top: 0.5rem;
     }
     .badge {
       font-size: 0.72rem;
@@ -279,7 +289,7 @@
       font-weight: 800;
       color: var(--text);
       line-height: 1.35;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.5rem;
     }
     .detail-sub {
       color: var(--gold);
@@ -449,7 +459,7 @@
       box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
     }
 
-    /* KHUNG CUỘN ĐỌC TRANH TỐI GIẢN TRỰC TIẾP (CHO CẢ PC VÀ MOBILE) */
+    /* KHUNG CUỘN ĐỌC TRANH TỐI GIẢN TRỰC TIẾP */
     #reader-scroll-container {
       flex: 1;
       width: 100%;
@@ -640,9 +650,9 @@
     <div class="shelf-header">
       <div>
         <h2>Kệ Truyện Tranh Phật Giáo</h2>
-        <p>Tuyển tập truyện tranh Phật Thuyết A Di Đà Kinh - Bản Đọc Trực Tuyến Tối Giản</p>
+        <p>Tuyển tập truyện tranh kinh điển Phật Giáo - Bản Đọc Trực Tuyến Tối Giản</p>
       </div>
-      <span id="shelf-stat" style="color: var(--gold); font-size: 0.88rem; font-weight: 600;">1 Bộ truyện (10 Tập)</span>
+      <span id="shelf-stat" style="color: var(--gold); font-size: 0.88rem; font-weight: 600;">5 Bộ truyện</span>
     </div>
 
     <div id="shelf-grid" class="grid"></div>
@@ -660,14 +670,12 @@
       </div>
       <div class="detail-info">
         <div>
-          <div class="detail-title" id="detail-title">Truyện tranh A Di Đà Kinh</div>
-          <div class="detail-sub">Phật Thuyết A Di Đà Kinh (Amituofojing 网络用)</div>
-          <div class="detail-desc">
-            Trọn bộ truyện tranh minh họa Phật Thuyết A Di Đà Kinh bằng tranh vẽ màu trang nghiêm, sống động. Đọc trực tiếp từ file PDF gốc với độ nét 100% không vỡ hạt, giao diện tối giản đồng nhất trên cả máy tính PC và điện thoại di động.
-          </div>
+          <div class="detail-title" id="detail-title">Tên truyện</div>
+          <div class="detail-sub" id="detail-sub">Phụ đề</div>
+          <div class="detail-desc" id="detail-desc">Mô tả chi tiết</div>
           <div class="detail-meta-tags">
-            <span class="badge badge-gold" id="detail-count-tag">10 Tập (PDF)</span>
-            <span class="badge">190 Trang</span>
+            <span class="badge badge-gold" id="detail-count-tag">-- Tập (PDF)</span>
+            <span class="badge" id="detail-pages-tag">-- Trang</span>
             <span class="badge">Chuẩn Vector Gốc 100%</span>
             <span class="badge" id="detail-progress-tag">Chưa đọc</span>
           </div>
@@ -693,7 +701,7 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH 3: TRÌNH ĐỌC TỐI GIẢN CHUẨN HOÁ (ĐỒNG NHẤT PC & MOBILE NHƯ HÌNH) -->
+  <!-- MÀN HÌNH 3: TRÌNH ĐỌC TỐI GIẢN CHUẨN HOÁ (ĐỒNG NHẤT PC & MOBILE) -->
   <div id="reader-view">
     <!-- THANH CÔNG CỤ CỐ ĐỊNH HOÀN TOÀN TRÊN ĐẦU TRANG -->
     <div class="reader-toolbar">
@@ -706,7 +714,7 @@
       </div>
 
       <div class="toolbar-right">
-        <!-- BỘ ĐẾM TRANG VÀ CHẤM XANH CHUẨN ĐỒNG BỘ NHƯ HÌNH MOBILE -->
+        <!-- BỘ ĐẾM TRANG VÀ CHẤM XANH CHUẨN ĐỒNG BỘ -->
         <div class="page-counter-badge" id="reader-status-badge">
           <span class="dot"></span>
           <span id="reader-status-text">Trang 1 / 20</span>
@@ -717,7 +725,7 @@
       </div>
     </div>
 
-    <!-- KHUNG CUỘN ĐỌC TRANH TỰ NHIÊN, KHÔNG CÓ IFRAME CLUNKY CỦA CHROME/CỐC CỐC -->
+    <!-- KHUNG CUỘN ĐỌC TRANH TỰ NHIÊN -->
     <div id="reader-scroll-container">
       <div id="reader-loading-overlay">
         <div class="spinner"></div>
@@ -738,7 +746,7 @@
   <div id="chap-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Chuyển nhanh Tập</h3>
+        <h3 id="modal-book-title">Chuyển nhanh Tập</h3>
         <button class="btn" onclick="closeChapModal()">✕ Đóng</button>
       </div>
       <div class="modal-body" id="modal-chap-grid"></div>
@@ -747,79 +755,98 @@
 
   <script>
     /* ==========================================================
-       CẤU HÌNH DỮ LIỆU ĐƯỜNG DẪN TỆP TIN TỪ REPOSITORY GITHUB
+       CƠ SỞ DỮ LIỆU TOÀN BỘ CÁC BỘ TRUYỆN TRANH PHẬT GIÁO
+       Cấu trúc thư mục:
+       PDF/
+       ├── Truyện tranh A Di Đà Kinh/
+       ├── Truyện tranh Gương Vãng Sanh/
+       ├── Tô màu hình Phật/
+       ├── Truyện tranh Âm Chất Văn/
+       └── Truyện tranh Du Tịnh Ý/
        ========================================================== */
-    const BASE_FOLDER = "PDF/Truyện tranh A Di Đà Kinh/";
+    const BOOKS_DATA = [
+      {
+        id: "adida_kinh",
+        title: "Truyện tranh A Di Đà Kinh",
+        subTitle: "Phật Thuyết A Di Đà Kinh (Amituofojing 网络用)",
+        desc: "Trọn bộ truyện tranh minh họa Phật Thuyết A Di Đà Kinh bằng tranh vẽ màu trang nghiêm, sống động. Đọc trực tiếp từ file PDF gốc với độ nét 100% không vỡ hạt.",
+        cover: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001.png",
+        totalPages: 190,
+        chapters: [
+          { id: 1, title: "Tập 1", range: "Trang 001 - 020", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001-020.pdf" },
+          { id: 2, title: "Tập 2", range: "Trang 021 - 040", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-021-040.pdf" },
+          { id: 3, title: "Tập 3", range: "Trang 041 - 060", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-041-060.pdf" },
+          { id: 4, title: "Tập 4", range: "Trang 061 - 080", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-061-080.pdf" },
+          { id: 5, title: "Tập 5", range: "Trang 081 - 100", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-081-100.pdf" },
+          { id: 6, title: "Tập 6", range: "Trang 101 - 120", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-101-120.pdf" },
+          { id: 7, title: "Tập 7", range: "Trang 121 - 140", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-121-140.pdf" },
+          { id: 8, title: "Tập 8", range: "Trang 141 - 160", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-141-160.pdf" },
+          { id: 9, title: "Tập 9", range: "Trang 161 - 180", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-161-180.pdf" },
+          { id: 10, title: "Tập 10", range: "Trang 181 - 190", file: "PDF/Truyện tranh A Di Đà Kinh/21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-181-190.pdf" }
+        ]
+      },
+      {
+        id: "guong_vang_sanh",
+        title: "Truyện tranh Gương Vãng Sanh",
+        subTitle: "Tuyển tập truyện tranh gương vãng sanh Tây Phương Cực Lạc",
+        desc: "Trọn bộ truyện tranh Gương Vãng Sanh gồm 5 tập minh họa các tấm gương niệm Phật vãng sanh trang nghiêm, thanh tịnh.",
+        cover: "PDF/Truyện tranh Gương Vãng Sanh/0.jpg",
+        totalPages: 95,
+        chapters: [
+          { id: 1, title: "Tập 1", range: "Trang 01 - 20", file: "PDF/Truyện tranh Gương Vãng Sanh/24.11.03 Truyện tranh Gương Vãng Sanh_file de xem-01-20.pdf" },
+          { id: 2, title: "Tập 2", range: "Trang 21 - 40", file: "PDF/Truyện tranh Gương Vãng Sanh/24.11.03 Truyện tranh Gương Vãng Sanh_file de xem-21-40.pdf" },
+          { id: 3, title: "Tập 3", range: "Trang 41 - 60", file: "PDF/Truyện tranh Gương Vãng Sanh/24.11.03 Truyện tranh Gương Vãng Sanh_file de xem-41-60.pdf" },
+          { id: 4, title: "Tập 4", range: "Trang 61 - 80", file: "PDF/Truyện tranh Gương Vãng Sanh/24.11.03 Truyện tranh Gương Vãng Sanh_file de xem-61-80.pdf" },
+          { id: 5, title: "Tập 5", range: "Trang 81 - 95", file: "PDF/Truyện tranh Gương Vãng Sanh/24.11.03 Truyện tranh Gương Vãng Sanh_file de xem-81-95.pdf" }
+        ]
+      },
+      {
+        id: "to_mau_hinh_phat",
+        title: "Tô màu hình Phật",
+        subTitle: "Tập vẽ và tô màu hình ảnh Đức Phật",
+        desc: "Tập tranh vẽ nét trắng đen tô màu hình Phật dành cho Phật tử và các bạn nhỏ gieo duyên lành với Tam Bảo.",
+        cover: "PDF/Tô màu hình Phật/0.jpg",
+        totalPages: 32,
+        chapters: [
+          { id: 1, title: "Tập 1", range: "Trang 01 - 20", file: "PDF/Tô màu hình Phật/23.08.15 Tô màu hình Phật_file để xem-01-20.pdf" },
+          { id: 2, title: "Tập 2", range: "Trang 21 - 32", file: "PDF/Tô màu hình Phật/23.08.15 Tô màu hình Phật_file để xem-21-32.pdf" }
+        ]
+      },
+      {
+        id: "am_chat_van",
+        title: "Truyện tranh Âm Chất Văn",
+        subTitle: "Văn Xương Đế Quân Âm Chất Văn (文昌帝君阴骘文漫画)",
+        desc: "Trọn bộ truyện tranh khuyên người tích đức hành thiện Văn Xương Đế Quân Âm Chất Văn, gồm 6 tập đầy đủ.",
+        cover: "PDF/Truyện tranh Âm Chất Văn/0.jpg",
+        totalPages: 117,
+        chapters: [
+          { id: 1, title: "Tập 1", range: "Trang 001 - 020", file: "PDF/Truyện tranh Âm Chất Văn/23.04.08 Truyện tranh Âm Chất Văn_file de xem_文昌帝君阴骘文漫画网络用-001-020.pdf" },
+          { id: 2, title: "Tập 2", range: "Trang 021 - 040", file: "PDF/Truyện tranh Âm Chất Văn/23.04.08 Truyện tranh Âm Chất Văn_file de xem_文昌帝君阴骘文漫画网络用-021-040.pdf" },
+          { id: 3, title: "Tập 3", range: "Trang 041 - 060", file: "PDF/Truyện tranh Âm Chất Văn/23.04.08 Truyện tranh Âm Chất Văn_file de xem_文昌帝君阴骘文漫画网络用-041-060.pdf" },
+          { id: 4, title: "Tập 4", range: "Trang 061 - 080", file: "PDF/Truyện tranh Âm Chất Văn/23.04.08 Truyện tranh Âm Chất Văn_file de xem_文昌帝君阴骘文漫画网络用-061-080.pdf" },
+          { id: 5, title: "Tập 5", range: "Trang 081 - 100", file: "PDF/Truyện tranh Âm Chất Văn/23.04.08 Truyện tranh Âm Chất Văn_file de xem_文昌帝君阴骘文漫画网络用-081-100.pdf" },
+          { id: 6, title: "Tập 6", range: "Trang 101 - 117", file: "PDF/Truyện tranh Âm Chất Văn/23.04.08 Truyện tranh Âm Chất Văn_file de xem_文昌帝君阴骘文漫画网络用-101-117.pdf" }
+        ]
+      },
+      {
+        id: "du_tinh_y",
+        title: "Truyện tranh Du Tịnh Ý",
+        subTitle: "Du Tịnh Ý Công Ngộ Táo Thần Ký (俞淨意公遇灶神記)",
+        desc: "Trọn bộ truyện tranh về câu chuyện cải biến vận mệnh của Du Tịnh Ý Công nhờ sửa đổi tâm niệm và làm lành lánh dữ.",
+        cover: "PDF/Truyện tranh Du Tịnh Ý/0.jpg",
+        totalPages: 107,
+        chapters: [
+          { id: 1, title: "Tập 1", range: "Trang 001 - 020", file: "PDF/Truyện tranh Du Tịnh Ý/23.03.05 Truyện tranh Du Tịnh Ý_file để xem_俞淨意公遇灶神記_网络用-001-020.pdf" },
+          { id: 2, title: "Tập 2", range: "Trang 021 - 040", file: "PDF/Truyện tranh Du Tịnh Ý/23.03.05 Truyện tranh Du Tịnh Ý_file để xem_俞淨意公遇灶神記_网络用-021-040.pdf" },
+          { id: 3, title: "Tập 3", range: "Trang 041 - 060", file: "PDF/Truyện tranh Du Tịnh Ý/23.03.05 Truyện tranh Du Tịnh Ý_file để xem_俞淨意公遇灶神記_网络用-041-060.pdf" },
+          { id: 4, title: "Tập 4", range: "Trang 061 - 080", file: "PDF/Truyện tranh Du Tịnh Ý/23.03.05 Truyện tranh Du Tịnh Ý_file để xem_俞淨意公遇灶神記_网络用-061-080.pdf" },
+          { id: 5, title: "Tập 5", range: "Trang 081 - 100", file: "PDF/Truyện tranh Du Tịnh Ý/23.03.05 Truyện tranh Du Tịnh Ý_file để xem_俞淨意公遇灶神記_网络用-081-100.pdf" },
+          { id: 6, title: "Tập 6", range: "Trang 101 - 107", file: "PDF/Truyện tranh Du Tịnh Ý/23.03.05 Truyện tranh Du Tịnh Ý_file để xem_俞淨意公遇灶神記_网络用-101-107.pdf" }
+        ]
+      }
+    ];
 
-    const COMIC_DATA = {
-      id: "adida_kinh",
-      title: "Truyện tranh A Di Đà Kinh",
-      subTitle: "Phật Thuyết A Di Đà Kinh (Amituofojing 网络用)",
-      cover: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001.png",
-      chapters: [
-        { 
-          id: 1, 
-          title: "Tập 1", 
-          range: "Trang 001 - 020", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-001-020.pdf" 
-        },
-        { 
-          id: 2, 
-          title: "Tập 2", 
-          range: "Trang 021 - 040", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-021-040.pdf" 
-        },
-        { 
-          id: 3, 
-          title: "Tập 3", 
-          range: "Trang 041 - 060", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-041-060.pdf" 
-        },
-        { 
-          id: 4, 
-          title: "Tập 4", 
-          range: "Trang 061 - 080", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-061-080.pdf" 
-        },
-        { 
-          id: 5, 
-          title: "Tập 5", 
-          range: "Trang 081 - 100", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-081-100.pdf" 
-        },
-        { 
-          id: 6, 
-          title: "Tập 6", 
-          range: "Trang 101 - 120", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-101-120.pdf" 
-        },
-        { 
-          id: 7, 
-          title: "Tập 7", 
-          range: "Trang 121 - 140", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-121-140.pdf" 
-        },
-        { 
-          id: 8, 
-          title: "Tập 8", 
-          range: "Trang 141 - 160", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-141-160.pdf" 
-        },
-        { 
-          id: 9, 
-          title: "Tập 9", 
-          range: "Trang 161 - 180", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-161-180.pdf" 
-        },
-        { 
-          id: 10, 
-          title: "Tập 10", 
-          range: "Trang 181 - 190", 
-          file: BASE_FOLDER + "21.09.03 Truyện tranh A Di Đà Kinh_file để xem_Amituofojing网络用-181-190.pdf" 
-        }
-      ]
-    };
-
+    let selectedBook = BOOKS_DATA[0];
     let currentChapIndex = 0;
     let pageObserver = null;
     let scrollTracker = null;
@@ -840,65 +867,71 @@
     }
 
     // Quản lý LocalStorage
-    function getReadList() {
+    function getReadList(bookId) {
       try {
-        const item = localStorage.getItem(`read_list_${COMIC_DATA.id}`);
+        const item = localStorage.getItem(`read_list_${bookId}`);
         return item ? JSON.parse(item) : [];
       } catch (e) { return []; }
     }
 
-    function markAsRead(idx) {
-      const list = getReadList();
+    function markAsRead(bookId, idx) {
+      const list = getReadList(bookId);
       if (!list.includes(idx)) {
         list.push(idx);
-        localStorage.setItem(`read_list_${COMIC_DATA.id}`, JSON.stringify(list));
+        localStorage.setItem(`read_list_${bookId}`, JSON.stringify(list));
       }
-      localStorage.setItem(`last_read_${COMIC_DATA.id}`, idx);
+      localStorage.setItem(`last_read_${bookId}`, idx);
     }
 
-    function getLastRead() {
-      const val = localStorage.getItem(`last_read_${COMIC_DATA.id}`);
+    function getLastRead(bookId) {
+      const val = localStorage.getItem(`last_read_${bookId}`);
       return val !== null ? parseInt(val) : 0;
     }
 
     function clearReadingHistory() {
-      if (confirm("Bạn có muốn đặt lại lịch sử đọc của truyện này không?")) {
-        localStorage.removeItem(`read_list_${COMIC_DATA.id}`);
-        localStorage.removeItem(`last_read_${COMIC_DATA.id}`);
-        renderDetailView();
-        alert("Đã đặt lại lịch sử thành công!");
+      if (confirm("Bạn có muốn đặt lại lịch sử đọc của tất cả các truyện không?")) {
+        BOOKS_DATA.forEach(b => {
+          localStorage.removeItem(`read_list_${b.id}`);
+          localStorage.removeItem(`last_read_${b.id}`);
+        });
+        if (selectedBook) renderDetailView(selectedBook);
+        alert("Đã đặt lại lịch sử đọc thành công!");
       }
     }
 
     /* ==========================================================
-       1. KHỞI TẠO KỆ SÁCH
+       1. KHỞI TẠO KỆ SÁCH (SHELF VIEW)
        ========================================================== */
     function initShelf() {
+      document.getElementById("shelf-stat").innerText = `${BOOKS_DATA.length} Bộ truyện`;
       const shelfGrid = document.getElementById("shelf-grid");
       shelfGrid.innerHTML = "";
 
-      const card = document.createElement("div");
-      card.className = "book-card";
-      card.innerHTML = `
-        <div class="book-cover">
-          <img src="${encodeURI(COMIC_DATA.cover)}" alt="${COMIC_DATA.title}" class="cover-img" loading="lazy" />
-        </div>
-        <div class="book-title">${COMIC_DATA.title}</div>
-        <div style="font-size: 0.78rem; color: var(--gold); margin-bottom: 0.5rem;">${COMIC_DATA.subTitle}</div>
-        <div class="book-badge-row">
-          <span class="badge badge-gold">${COMIC_DATA.chapters.length} Tập</span>
-          <span class="badge">190 Trang</span>
-          <span class="badge">Bản Gốc 100%</span>
-        </div>
-      `;
-      card.onclick = openDetail;
-      shelfGrid.appendChild(card);
+      BOOKS_DATA.forEach(book => {
+        const card = document.createElement("div");
+        card.className = "book-card";
+        card.innerHTML = `
+          <div class="book-cover">
+            <img src="${encodeURI(book.cover)}" alt="${book.title}" class="cover-img" loading="lazy" />
+          </div>
+          <div class="book-title">${book.title}</div>
+          <div class="book-subtitle">${book.subTitle}</div>
+          <div class="book-badge-row">
+            <span class="badge badge-gold">${book.chapters.length} Tập</span>
+            <span class="badge">${book.totalPages} Trang</span>
+            <span class="badge">Bản Gốc 100%</span>
+          </div>
+        `;
+        card.onclick = () => openDetail(book);
+        shelfGrid.appendChild(card);
+      });
     }
 
     /* ==========================================================
-       2. MÀN HÌNH CHI TIẾT TRUYỆN
+       2. MÀN HÌNH CHI TIẾT TRUYỆN (DETAIL VIEW)
        ========================================================== */
-    function openDetail() {
+    function openDetail(book) {
+      selectedBook = book || selectedBook;
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
       document.getElementById("shelf-view").style.display = "none";
@@ -906,24 +939,27 @@
       document.getElementById("detail-view").style.display = "flex";
       document.getElementById("main-header").style.display = "flex";
 
-      renderDetailView();
+      renderDetailView(selectedBook);
       window.scrollTo(0, 0);
     }
 
-    function renderDetailView() {
-      document.getElementById("detail-title").innerText = COMIC_DATA.title;
-      document.getElementById("detail-cover-img").src = encodeURI(COMIC_DATA.cover);
-      document.getElementById("detail-count-tag").innerText = `${COMIC_DATA.chapters.length} Tập (PDF)`;
+    function renderDetailView(book) {
+      document.getElementById("detail-title").innerText = book.title;
+      document.getElementById("detail-sub").innerText = book.subTitle;
+      document.getElementById("detail-desc").innerText = book.desc;
+      document.getElementById("detail-cover-img").src = encodeURI(book.cover);
+      document.getElementById("detail-count-tag").innerText = `${book.chapters.length} Tập (PDF)`;
+      document.getElementById("detail-pages-tag").innerText = `${book.totalPages} Trang`;
 
-      const readList = getReadList();
-      const lastReadIdx = getLastRead();
+      const readList = getReadList(book.id);
+      const lastReadIdx = getLastRead(book.id);
       const progressTag = document.getElementById("detail-progress-tag");
       const btnContinue = document.getElementById("btn-continue-read");
 
       if (readList.length > 0) {
-        progressTag.innerText = `Đã đọc ${readList.length}/${COMIC_DATA.chapters.length} tập`;
+        progressTag.innerText = `Đã đọc ${readList.length}/${book.chapters.length} tập`;
         btnContinue.style.display = "inline-flex";
-        btnContinue.innerText = `🔖 Tiếp tục: ${COMIC_DATA.chapters[lastReadIdx].title}`;
+        btnContinue.innerText = `🔖 Tiếp tục: ${book.chapters[lastReadIdx].title}`;
       } else {
         progressTag.innerText = "Chưa đọc";
         btnContinue.style.display = "none";
@@ -932,7 +968,7 @@
       const grid = document.getElementById("detail-chap-grid");
       grid.innerHTML = "";
 
-      COMIC_DATA.chapters.forEach((chap, idx) => {
+      book.chapters.forEach((chap, idx) => {
         const isRead = readList.includes(idx);
         const item = document.createElement("div");
         item.className = `chap-item ${isRead ? 'read' : 'unread'}`;
@@ -950,7 +986,7 @@
     }
 
     function continueReading() {
-      const last = getLastRead();
+      const last = getLastRead(selectedBook.id);
       startReadingChapter(last);
     }
 
@@ -958,9 +994,9 @@
        3. BẮT ĐẦU ĐỌC TRUYỆN (ĐỒNG NHẤT CẢ PC VÀ MOBILE)
        ========================================================== */
     function startReadingChapter(chapIdx = 0) {
-      if (!COMIC_DATA.chapters[chapIdx]) return;
+      if (!selectedBook || !selectedBook.chapters[chapIdx]) return;
       currentChapIndex = chapIdx;
-      const chap = COMIC_DATA.chapters[chapIdx];
+      const chap = selectedBook.chapters[chapIdx];
       const encodedUrl = encodeURI(chap.file);
 
       // Đặt lại tỷ lệ phóng to
@@ -976,7 +1012,7 @@
 
       // Nạp truyện với giao diện tối giản chuẩn mực
       loadChapterPages(encodedUrl, chapIdx);
-      markAsRead(chapIdx);
+      markAsRead(selectedBook.id, chapIdx);
     }
 
     /* ==========================================================
@@ -1068,7 +1104,7 @@
         const btnPrev = document.getElementById("btn-prev-chap");
         const btnNext = document.getElementById("btn-next-chap");
         btnPrev.style.display = (chapIdx > 0) ? "inline-flex" : "none";
-        btnNext.style.display = (chapIdx + 1 < COMIC_DATA.chapters.length) ? "inline-flex" : "none";
+        btnNext.style.display = (chapIdx + 1 < selectedBook.chapters.length) ? "inline-flex" : "none";
         document.getElementById("end-chap-nav").style.display = "flex";
 
         setTimeout(() => {
@@ -1230,15 +1266,17 @@
     }
 
     function nextChapter() {
-      if (currentChapIndex + 1 < COMIC_DATA.chapters.length) startReadingChapter(currentChapIndex + 1);
+      if (currentChapIndex + 1 < selectedBook.chapters.length) startReadingChapter(currentChapIndex + 1);
     }
 
     function openChapModal() {
-      const readList = getReadList();
+      if (!selectedBook) return;
+      document.getElementById("modal-book-title").innerText = selectedBook.title;
+      const readList = getReadList(selectedBook.id);
       const grid = document.getElementById("modal-chap-grid");
       grid.innerHTML = "";
 
-      COMIC_DATA.chapters.forEach((chap, c) => {
+      selectedBook.chapters.forEach((chap, c) => {
         const isRead = readList.includes(c);
         const isActive = (c === currentChapIndex);
 
@@ -1269,7 +1307,8 @@
       document.getElementById("reader-view").style.display = "none";
       if (pageObserver) pageObserver.disconnect();
       if (scrollTracker) scrollTracker.disconnect();
-      openDetail();
+      if (selectedBook) openDetail(selectedBook);
+      else backToShelf();
     }
 
     function backToShelf() {
@@ -1282,6 +1321,7 @@
       document.getElementById("main-header").style.display = "flex";
       if (pageObserver) pageObserver.disconnect();
       if (scrollTracker) scrollTracker.disconnect();
+      window.scrollTo(0, 0);
     }
 
     // Phím tắt tiện lợi trên PC (Mũi tên trái/phải để chuyển tập)
